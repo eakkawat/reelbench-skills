@@ -1,94 +1,115 @@
-# shots-report.html 设计约定
+# Design rules for shots-report.html
 
-改样式前先读这份，别凭感觉发挥。
+Read this before you change any styling. Do not improvise by feel.
 
-## 三层结构：壳 + 资产 + 数据
+## Three layers: shell + assets + data
 
-报告不是一个大字符串，是三样东西拼起来的：
+The report is not one large string. Three things are assembled:
 
-| 层 | 在哪 | 改它等于改什么 |
+| layer | where | changing it changes |
 | --- | --- | --- |
-| **壳** | `scripts/video-shots.mjs` 的 `renderHtml()` | 页面骨架：头、统计条、目录、播放器、四个区块、页脚 |
-| **样式** | `scripts/report.css` | **报告的设计本身**。改这份文件就能改报告的长相，不用碰 JS，也不用碰生成器 |
-| **交互** | `scripts/report.js` | 列表渲染、搜索筛选排序、时间轴、播放同步、大图、导出 |
-| **数据** | 内联的 `DOC` 与 `CFG` | `DOC` 就是 shots.json 原样；`CFG` 是词表、色阶、筛选项、头像取哪一镜、关键帧有没有、界面文案 |
+| **shell** | `renderHtml()` in `scripts/video-shots.mjs` | the page skeleton: header, statistics bar, table of contents, player, four sections, footer |
+| **style** | `scripts/report.css` | **the design of the report itself.** Edit this file to change how the report looks; no JS, no generator |
+| **interaction** | `scripts/report.js` | list rendering, search / filter / sort, the timeline, playback sync, the lightbox, export |
+| **data** | the inlined `DOC` and `CFG` | `DOC` is shots.json verbatim; `CFG` carries the vocabularies, the colour ramp, the filter chips, which frame each portrait uses, which key frames exist, and the UI strings |
 
-render 时两份资产被**整段内联**进 HTML，产物仍然是**单文件、零外部依赖、离线双击能开**。
-`report.js` 是通用的：换一条片子、换一种语言，它一个字都不用改——**页面上的每个数字都从 `DOC` 算**，
-没有一处是生成时写死的。
+At render time both assets are **inlined whole** into the HTML. The product stays **a single file, no
+external dependency, openable offline by double-click**. `report.js` is generic: a different film or a
+different language changes not one character of it — **every number on the page is computed from `DOC`**,
+nothing is written at generation time.
 
-**三个文件必须一起拷走。** `scripts/` 少了 `report.css` 或 `report.js`，`render --html` 直接报错。
+**The three files must be copied together.** If `report.css` or `report.js` is missing from `scripts/`,
+`render --html` fails with an error.
 
-## CFG 契约
+## The CFG contract
 
-`renderHtml` 算好、`report.js` 消费，两边都不许假设对方的细节：
+`renderHtml` computes it, `report.js` consumes it. Neither side may assume details about the other:
 
-| 字段 | 内容 |
+| field | content |
 | --- | --- |
-| `frameDir` / `frames` | 关键帧目录，以及每个镜头**实际有哪几张**（`'ab'` / `'a'` / `''`）——缺图摆占位，不摆会 404 的 `<img>` |
-| `labels` | 景别 / 类别 / 运镜 / 转场四张词表的**全量**中英文名，跟着 `--lang` 走 |
-| `colors` | 景别色阶，来自 `SHOT_SIZES` 的 `color` 字段，时间轴与图例共用 |
-| `filters` | 筛选条：按镜头数排前四的类别 + 全部 + 其他 |
-| `portraits` | 每个人物的头像取哪一镜：**同框人最少 → 景别最近 → 出场最早**，没帧就不给 |
-| `words` | 界面文案。**`report.js` 引用的每个键都由自测对账**，写漏一个当场红 |
+| `frameDir` / `frames` | the key-frame directory, and **which frames each shot actually has** (`'ab'` / `'a'` / `''`) — a missing image gets a placeholder, never an `<img>` that will 404 |
+| `labels` | the **complete** English and Chinese label sets for shot size / category / camera move / transition, following `--lang` |
+| `colors` | the shot-size colour ramp, taken from the `color` field of `SHOT_SIZES`; the timeline and the legend share it |
+| `filters` | the filter chips: the four categories by shot count, plus All, plus Other |
+| `portraits` | which frame supplies each person's portrait: **fewest people in frame → closest shot size → earliest appearance**; no frame, no portrait |
+| `words` | the UI strings. **Every key `report.js` references is cross-checked by the selftest**; one missing key fails on the spot |
 
-## 基调
+## Tone
 
-- 纸白 `#f7f8f4` + 深绿 `#285444` + 嫩绿 `#dceba7`；正文 13px，数字一律 `tabular-nums`
-- 内容区 `.content` 控制留白与上限宽度；手机宽度（~400px）不许横向滚动
-- 模型产出的每一个字都过 `esc()`——生成时一遍，`report.js` 里再一遍；内嵌 JSON 的 `<`
-  转成 `<` 防 `</script` 截断
+- paper white `#f7f8f4` + deep green `#285444` + light green `#dceba7`; body text 13px, every number
+  uses `tabular-nums`
+- `.content` controls the margins and the maximum width; at phone width (~400px) no horizontal scroll
+- every character the model produced passes through `esc()` — once at generation, again inside
+  `report.js`; a `<` inside the embedded JSON becomes `<` so `</script` cannot truncate it
 
-## 区块顺序
+## Section order
 
-头（片名 · 参数 · 门的结论 · 导出）→ 目录 → 统计条 → **镜头明细**（播放器 + 节奏带 + 镜头表）
-→ 统计分布 → 出场人物 → 质量检查 → 页脚。
+header (title · parameters · gate verdict · export) → table of contents → statistics bar →
+**shot detail** (player + pace strip + shot table) → distributions → cast → quality checks → footer.
 
-后三块是 `<details>`，默认收起——**拉片的主战场是镜头表**，其余的按需展开。
+The last three are `<details>`, collapsed by default. **The shot table is where a shot breakdown
+lives**; open the rest on demand.
 
-## 播放器：报告能当片子看
+## The player: the report plays as a film
 
-`<video>` 挂原片（`--video` 指路径，默认用 `source`；也能现场选本地文件）。播放时三处跟着走：
-当前镜头信息、镜头行高亮、时间轴上的进度填充。
+A `<video>` carries the source (point at it with `--video`, otherwise `source` is used; the viewer can
+also pick a local file in the page). During playback three things follow: the current shot's
+information, the highlighted shot row, and the progress fill on the timeline.
 
-- 找镜头用**二分**（`shotAtTime`），不是线性扫——53 镜和 5300 镜一样快
-- 用 `requestVideoFrameCallback` 跟帧，没有就退回 `requestAnimationFrame`
-- **播放过程中只改 class 和进度值，绝不重建行**——重建会把滚动位置和焦点抖掉
-- 视频加载不了、或时长和报告对不上，页面**明说**，不装作没事
+- the shot lookup uses **binary search** (`shotAtTime`), not a linear scan — 53 shots and 5300 shots
+  cost the same
+- frames are followed with `requestVideoFrameCallback`, falling back to `requestAnimationFrame`
+- **during playback only classes and progress values change; rows are never rebuilt** — a rebuild
+  jitters the scroll position and steals focus
+- if the video cannot load, or its duration does not match the report, the page **says so**. It does
+  not pretend nothing is wrong
 
-## 节奏带
+## The pace strip
 
-一镜一片，**片宽 = 时长占比，颜色深浅 = 景别远近**（色阶见 `CFG.colors`）。点一片跳到那一镜；
-播放时当前那片按播放进度填充。刻度取**整的步长**走五格再补片长——`01:21` 这种刻度没人看得下去。
+One segment per shot: **segment width = share of duration, colour depth = shot-size distance** (the
+ramp is in `CFG.colors`). Click a segment to jump to that shot; during playback the current segment
+fills with playback progress. Tick marks step in **round intervals**, five of them, then the film
+length — nobody can read a scale like `01:21`.
 
-## 镜头表：列表与卡片两种视图
+## The shot table: list view and card view
 
-列表视图是默认：一行一镜，**首尾两张关键帧并排**（对照着看就是运镜）+ 时间/时长 +
-景别/类别/运镜 + 画面描述 + 文字·声音。卡片视图适合快速翻画面。
+List view is the default: one row per shot, **the opening and closing key frames side by side**
+(read them together and you have the camera move) + time / duration + size / category / camera +
+frame description + text and sound. Card view suits a fast look through the pictures.
 
-- 搜索框查镜号、画面、台词、人物名；筛选条按类别；排序可按时长
-- 点一行 = 跳到那一镜（播放器同步）；点关键帧 = 开大图（← → 切首尾帧，ESC 关）
-- 每个镜头的 `id` 是锚点，`#S07` 直接深链到那一镜
+- the search box matches shot number, frame description, dialogue, person name; the chips filter by
+  category; sorting can order by duration
+- clicking a row jumps to that shot (the player follows); clicking a key frame opens the lightbox
+  (← → switch the opening and closing frame, ESC closes)
+- every shot `id` is an anchor, so `#S07` deep-links straight to that shot
 
-## 质量门与提示
+## Quality gates and hints
 
-- 门分三态：通过 / 未通过 / **跳过**。跳过不是通过，**把原因印在卡片上**
-- 提示（不拦）单独成块：运镜实测偏高这类**需要人判断**的东西放这里，不混进门。
-  提示里点名的镜号做成按钮，点一下跳到那一镜
-- 页头一行给结论：`14 项通过 · 1 条提示`
+- a gate has three states: pass / fail / **skipped**. Skipped is not a pass, and **the reason is
+  printed on the card**
+- hints (not blocking) form their own block: things that **need a human to judge**, such as a high
+  measured motion against a static claim, live there and are not mixed into the gates. A shot id named
+  in a hint is a button; clicking it jumps to that shot
+- the header carries one line of verdict: `14 passed · 1 hint`
 
-## 界面语言
+## UI language
 
-`--lang zh|en` **只切界面标签**（优先级 `--lang` > JSON 顶层 `lang` 字段 > 默认中文）。
+`--lang zh|en` **switches UI labels only** (precedence: the `--lang` flag > the top-level `lang` field
+in the JSON > **English by default**).
 
-- 切的是标签：统计条、区块标题、按钮、播放器状态、词表的景别 / 类别 / 运镜 / 转场名
-- **不切的是内容**：画面描述、台词、画面文字、人物名、备注——那是模型写的正文，原样不动
-- 文案全部走 `CFG.words`，`report.js` 里没有一句硬编码的中文。**引用的每个键在中英两张表里
-  都必须有**，自测逐个对账（写漏一个，页面上就是 `undefined`，所以这条门是硬的）
+- what switches: the statistics bar, section titles, buttons, player status, and the vocabulary labels
+  for shot size / category / camera move / transition
+- **what does not switch: content.** Frame descriptions, dialogue, on-screen text, person names, notes —
+  that is prose the model wrote, and it stays as it is
+- every string goes through `CFG.words`; `report.js` contains no hardcoded Chinese. **Every key it
+  references must exist in both the Chinese and the English table**, and the selftest checks each one
+  (a missing key prints `undefined` on the page, so this gate is hard)
 
-## 自测盯着的是契约不是像素
+## What the selftest guards is the contract, not the pixels
 
-`selftest.mjs` 不比对 HTML 长什么样（那种断言改一次样式就红一次），它查的是：
-资产有没有被内联、壳里有没有漏替换的模板占位、`DOC` 的 `<` 有没有转义、门有没有逐条列出、
-`CFG` 的词表是不是全量、头像挑得对不对、缺帧有没有如实声明、
-**`report.js` 引用的文案键在中英两张表里是不是都有**。
+`selftest.mjs` does not compare what the HTML looks like — that kind of assertion breaks on every style
+change. It checks: whether the assets were inlined, whether the shell left an unreplaced template
+placeholder, whether `<` in `DOC` was escaped, whether every gate is listed, whether the `CFG`
+vocabularies are complete, whether the portrait choice is right, whether missing frames are declared
+honestly, and **whether every UI string key `report.js` references exists in both the Chinese and the
+English table**.

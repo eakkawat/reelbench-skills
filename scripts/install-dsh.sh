@@ -11,7 +11,7 @@ set -euo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SRC="$REPO/skills/video-shots"
 DST="$HOME/.dsh/skills/video-shots"
-LINK_ITEMS=(scripts references examples assets README.md README.en.md)
+LINK_ITEMS=(scripts references examples assets README.md README.zh.md)
 uninstall=0
 
 for arg in "$@"; do

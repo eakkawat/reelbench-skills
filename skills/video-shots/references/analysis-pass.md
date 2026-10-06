@@ -1,80 +1,97 @@
-# 拉片：一批镜头怎么看、怎么填
+# Reading a batch of shots: what to look at, what to fill
 
-一次任务拉一批镜头（默认 ≤ 25 个，正好一张联系表）。你拿到：这一批的镜头底稿
-（镜号、起止、时长、实测运动，**全是量出来的，不要重算**）、这一批的联系表 a/b 两张、
-以及 `taxonomy.md` 的词表。产出：把这一批每个镜头的 `size` / `category` / `camera` /
-`frame` 四个字段填满，顺带记下 `subjects` / `onscreenText` / `audio`。
+One task covers one batch of shots (25 or fewer by default — exactly one contact sheet). You receive:
+the shot draft for this batch (shot number, start, end, duration, measured motion — **all measured,
+do not recompute**), the a/b contact sheets for this batch, and the vocabularies in `taxonomy.md`.
+You produce: `size` / `category` / `camera` / `frame` filled for every shot in the batch, plus
+`subjects` / `onscreenText` / `audio` where they apply.
 
-## 先看联系表，再看单帧
+## Read the contact sheet first, the single frame second
 
-1. **先看 a 表**（每镜起手帧，行优先，S01 在左上）：一屏把这一批的**内容**过一遍——
-   谁在、在哪、这一段在讲什么。
-2. **再看 b 表**（每镜收尾帧，同样顺序）：同一格前后对照，**取景变没变**一眼就知道——
-   这就是运镜的判据。
-3. 只在**判不准的那几个镜头**上回去看单帧（`frames/S07a.jpg`）。一张张翻完整部片是浪费，
-   联系表存在的意义就是不用这么干。
+1. **Read the a sheet first** (the opening frame of each shot, row-major, S01 top left): one screen
+   takes in the **content** of the batch — who is there, where, what this stretch is about.
+2. **Read the b sheet next** (the closing frame of each shot, same order): compare the same cell
+   before and after. **Whether the framing changed** is visible at a glance — that is the camera-move
+   evidence.
+3. Go back to a single frame (`frames/S07a.jpg`) **only for the shots you cannot call**. Watching a
+   whole film one image at a time wastes the budget. The contact sheet exists so you do not have to.
 
-## 填的顺序：景别 → 类别 → 运镜 → 画面
+## Fill order: shot size → category → camera → frame
 
-1. **景别**最客观，先定，定完心里就有了这一批的节奏轮廓。
-2. **类别**看这一镜在片子里干什么活（定场？对话？插入？），判据在 `taxonomy.md`。
-3. **运镜**看 a/b 取景差 + 实测运动值。两者打架时**信实测**：
-   - 取景看着没变，实测 0.3 → `static`
-   - 取景明显变了，实测 15 → 按变的方向选推/拉/摇/移/跟
-   - 取景没变但实测 20 → 多半是主体在动，仍然是 `static`（门不拦，报告会出一条提示）
-   - **实测接近 0 却想写推拉摇移 → 一定是判错了，门会拦**
-4. **画面**最后写，一句话，12 字起，写看得见的东西。写完自问：只看这句话，
-   能不能把这一镜从片子里找出来？
+1. **Shot size** is the most objective. Fix it first; the shape of the batch is then in your head.
+2. **Category**: what job this shot does in the film (establishing? dialogue? insert?). The criteria
+   are in `taxonomy.md`.
+3. **Camera move**: read the a/b framing difference plus the measured motion value. When the two
+   disagree, **trust the measurement**:
+   - framing looks unchanged, measured 0.3 → `static`
+   - framing clearly changed, measured 15 → pick push / pull / pan / truck / tracking by the direction
+   - framing unchanged but measured 20 → most likely the subject is moving; still `static` (the gate
+     does not block, the report prints a hint)
+   - **measured near zero while you want to write a push, pull, pan or track → the call is wrong, and
+     the gate will stop it**
+4. **Frame description** last. One sentence, write what is visible. Then ask: from this sentence alone,
+   could I find this shot in the film? For English, aim at 8 words or more — the 12-character gate
+   floor does not bite on English (see `taxonomy.md`).
 
-## 硬规则
+## Hard rules
 
-1. **时长不是估的。** 底稿上的秒数来自切点相减，**一个字都不要改**。觉得某个镜头的边界不对，
-   走 `recut`，不要手改 `start` / `end`。
-2. **实测运动不是参考意见。** 它是像素证据。写运镜之前先看一眼这个数。
-3. **对话镜头必须记台词**，字卡必须记画面文字，反应镜头必须写是谁在反应，空镜里不许有人——
-   门会逐条查（见 `taxonomy.md` 的证据列）。
-4. **两镜的画面描述不许一字不差。** 同机位的正反打也要写出差别。
-5. **判不准就写 `note`，不要猜一个确定的词。**
+1. **Durations are not estimates.** The seconds in the draft come from cut-point subtraction. **Do not
+   change one character.** If a boundary looks wrong, go through `recut`; do not hand-edit
+   `start` / `end`.
+2. **Measured motion is not an opinion.** It is pixel evidence. Look at the number before you write a
+   camera move.
+3. **A dialogue shot must carry its line. A card must carry its on-screen text. A reaction shot must
+   say who is reacting. An empty shot may contain no people.** The gates check each of these (see the
+   evidence column in `taxonomy.md`).
+4. **Two shots must not have identical frame descriptions.** Write the difference even for a
+   same-position reverse shot.
+5. **When a call is unclear, write `note`. Do not guess a confident value.**
 
-## 漏刀与多刀：检测不是神
+## Missed cuts and extra cuts: the detector is not infallible
 
-场景检测按画面变化率切，所以它必然在两个地方出错。**发现了就用 `recut` 修，别将就**：
+Scene detection cuts on rate of picture change, so it fails in two places for certain. **When you find
+one, fix it with `recut`. Do not live with it:**
 
-| 症状 | 原因 | 治法 |
+| symptom | cause | fix |
 | --- | --- | --- |
-| 一个镜头的 a 帧和 b 帧根本是两个场景 | 中间漏了刀 | 在变化处 `recut --split <秒>` |
-| 某镜长得离谱（十几秒还全是对话正反打） | 同机位、同亮度的切换检测不到 | 抽几张中间帧定位，逐个 `--split` |
-| 暗场接暗场、片尾字卡一张接一张，全被并成一镜 | 黑底画面之间的变化率本来就低 | 降 `--threshold` 重跑，或逐个 `--split` |
-| 一个稳定镜头被切成三四段碎片 | 手持晃动、闪光、字幕跳变冲高了变化率 | `recut --merge <秒>` 把多余的刀并掉 |
-| 叠化段落里切点落在半透明的那几帧上 | 叠化本来就没有明确的一帧 | 切点取叠化中点，`transitionIn` 写 `dissolve` |
+| The a frame and the b frame of one shot are two different scenes | a cut was missed in between | `recut --split <seconds>` at the change |
+| One shot is absurdly long (a dozen seconds of shot/reverse-shot dialogue) | a same-position, same-brightness switch is not detected | extract a few middle frames to locate it, then `--split` each |
+| Black into black, end cards one after another, all merged into one shot | the change rate between black-backed pictures is low by nature | rerun with a lower `--threshold`, or `--split` each |
+| One stable shot was chopped into three or four fragments | handheld shake, a flash, or a subtitle jump pushed the change rate up | `recut --merge <seconds>` to remove the extra cuts |
+| In a dissolve the cut point lands on the semi-transparent frames | a dissolve has no single defining frame | take the dissolve midpoint as the cut, write `transitionIn: dissolve` |
 
-**补的刀会记进 `manualCuts`，门认它**；并刀只会减少边界，白送通过。手改边界过不了 `boundary` 门。
+**An added cut is recorded in `manualCuts` and the gate accepts it.** Merging only removes boundaries,
+so it passes for free. A hand-edited boundary does not pass the `boundary` gate.
 
-一上来就发现全片只切出十几个镜头、平均镜长十几秒，那是**阈值选高了**，
-别一刀一刀补——`seed --threshold 0.15` 重跑一遍更快。
+If you find at the start that the whole film cut into a dozen shots with an average length of a dozen
+seconds, **the threshold was too high**. Do not add cuts one by one — rerun `seed --threshold 0.15`.
 
-## 导演手感（不设门，但决定这份拉片有没有用）
+## The director's eye (no gate here, but this decides whether the breakdown is worth anything)
 
-- **节奏带比数字更快说明问题。** 深浅相间、长短相间是好节奏；一整片同色同宽，
-  要么是片子平，要么是你把所有镜头都填成了中景固定。
-- **平均镜长是这部片的呼吸。** 短剧 2–4 秒、广告 1–2 秒、文艺片 8 秒以上都正常，
-  重要的是**它和片子的类型对不对得上**，以及**高潮段落有没有变速**。
-- **对话戏看正反打的比例。** 全是一方的镜头说明另一方是工具人；反应镜头占比高的片子，
-  情绪一定给得足。
-- **插入特写是重音。** 数一数它们落在哪儿——落在关键动作上是好剪辑，撒得到处都是是慌。
-- **固定机位占比高不是缺点。** 运镜克制的片子往往更稳；反过来，一部片子七成都是推拉摇移，
-  多半是在用运镜掩盖内容。
+- **The pace strip says it faster than the numbers do.** Alternating depths and lengths is good
+  rhythm. One flat colour and one flat width across the whole film means either the film is flat, or
+  you filled every shot as medium and static.
+- **Average shot length is this film's breathing.** 2–4 seconds for a short drama, 1–2 for an ad, 8 or
+  more for an art film are all normal. What matters is **whether it matches the kind of film**, and
+  **whether the climax changes speed**.
+- **In a dialogue scene, read the reverse-shot ratio.** All one side means the other side is a prop.
+  A high share of reaction shots means the feeling lands.
+- **Insert close-ups are accents.** Count where they fall. On a key action, that is good editing.
+  Scattered everywhere, that is panic.
+- **A high share of static cameras is not a fault.** Restrained camera work is often steadier. The
+  reverse is the warning: a film that is 70% push, pull, pan and track is usually using camera movement
+  to cover for content.
 
-## 常见病
+## Common diseases
 
-| 病 | 症状 | 治法 |
+| disease | symptom | cure |
 | --- | --- | --- |
-| 复制粘贴病 | 相邻几镜画面描述几乎一样 | dedup 门会拦。同机位也要写出动作进度的差别 |
-| 空话病 | 「氛围感很强」「很有电影感」 | 空话词表会拦。改成看得见的东西 |
-| 运镜幻觉 | 人在跑就判成跟拍，实际机位没动 | 看实测值；`static` 是默认，不是备选 |
-| 景别通胀 | 什么都写特写 | 按人占画高判，OTS 通常是中近景 |
-| 类别联动 | 特写一律写 `insert` | 说话的特写是 `dialogue`；类别看功能不看距离 |
-| 字幕错位 | 把对白字幕记进 `onscreenText` | 有人在说就是台词，进 `audio` |
-| 黑场硬套景别 | 给片尾黑底字卡写「全景」 | 黑场和字卡一律 `none` |
-| 边界手改 | 直接改 `start` / `end` 挪刀 | `boundary` 门会拦。改边界只走 `recut` |
-| 一遍过 | 填完不 validate 就交 | 门是代码，跑一次几毫秒，不跑等于没做 |
+| copy-paste | neighbouring frame descriptions are nearly identical | the dedup gate stops it. Write the difference in action progress even for the same position |
+| puffery | "very cinematic mood", "great atmosphere" | the Chinese list stops Chinese puffery; English puffery passes, so you must stop it yourself. Write what is visible |
+| camera hallucination | a person runs, so it is called tracking, but the camera never moved | read the measured value; `static` is the default, not the fallback |
+| shot-size inflation | everything is a close-up | judge by how much of frame height a person fills; an OTS is usually medium-close |
+| category coupling | every close-up written as `insert` | a talking close-up is `dialogue`; category reads the job, not the distance |
+| subtitle misfiled | a dialogue subtitle recorded in `onscreenText` | if a person is saying it, it is dialogue — it goes in `audio` |
+| forcing a size onto black | "wide" written on an end card over black | black frames and cards are always `none` |
+| hand-edited boundary | moving a cut by editing `start` / `end` | the `boundary` gate stops it. Boundaries change only through `recut` |
+| one pass and done | filled in and delivered without `validate` | the gates are code; a run takes milliseconds. Not running it means not doing it |

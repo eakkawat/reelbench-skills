@@ -1,89 +1,95 @@
-# shots.json 结构
+# The shape of shots.json
 
-一层：**片 → 镜头（shot）**。没有段、没有场——拉片拆的是成片，成片里只有镜头。
+One level: **film → shots**. No sequences, no scenes. A shot breakdown takes apart a finished film,
+and a finished film contains only shots.
 
 ```json
 {
   "source": "demo-video.mp4",
-  "title": "啥是AI",
-  "lang": "zh",
+  "title": "What Is AI",
+  "lang": "en",
   "meta": { "durationSeconds": 202.9, "fps": 30, "width": 1680, "height": 720, "aspect": "7:3", "codec": "h264", "hasAudio": true },
   "params": { "sceneThreshold": 0.15, "minShotSeconds": 0.3 },
-  "seedCuts": [0.9, 1.23, 2.97, "…检测到的全部切点"],
+  "seedCuts": [0.9, 1.23, 2.97, "…every detected cut point"],
   "manualCuts": [63.5, 127.37],
-  "cast": [ { "id": "P1", "name": "老太太", "note": "主角" } ],
-  "shots": [ { "…": "见下" } ]
+  "cast": [ { "id": "P1", "name": "the old woman", "note": "protagonist" } ],
+  "shots": [ { "…": "see below" } ]
 }
 ```
 
-## 机器字段：模型不许改
+## Machine fields: the model must not change them
 
-这四类字段由 `seed` / `recut` 写入，**改了就等于伪造证据**：
+`seed` and `recut` write these four groups. **Changing one is fabricating evidence:**
 
-| 字段 | 来源 |
+| field | source |
 | --- | --- |
 | `meta` | ffprobe |
-| `seedCuts` | ffmpeg 场景检测的原始切点（含被并掉的碎片，备查） |
-| `shot.start` / `shot.end` / `shot.seconds` | 切点相减，两位小数 |
-| `shot.motion` | 该区间逐帧差分的中位数（两端剔除，避开切点尖峰） |
+| `seedCuts` | the raw cut points from ffmpeg scene detection (including fragments that were merged away, kept for reference) |
+| `shot.start` / `shot.end` / `shot.seconds` | cut-point subtraction, two decimals |
+| `shot.motion` | the median of per-frame differences over that interval (both ends trimmed, to avoid the spike at a cut) |
 
-要改边界只有一条路：**`recut --split` / `--merge`**。它会重编号、重算时长、重算实测运动，
-并把补的刀记进 `manualCuts`。手改必漏一处，门会当场点名。
+One route changes a boundary: **`recut --split` / `--merge`**. It renumbers, recomputes durations,
+recomputes measured motion, and records the added cut in `manualCuts`. A hand edit always misses one
+place, and a gate names it on the spot.
 
-## shot（镜头）
+## shot
 
-| 字段 | 类型 | 说明 |
+| field | type | notes |
 | --- | --- | --- |
-| `id` | string | 镜号 `S01`：两位补零、从 1 起、**按顺序连号**。它是关键帧文件名（`S01a.jpg` / `S01b.jpg`） |
-| `start` / `end` | number | 起止秒，两位小数。**相邻镜头首尾相接**，首镜从 0 起，末镜收在片长 |
-| `seconds` | number | `end − start`。冗余存一份是为了让门能对账 |
-| `motion` | number\|null | 实测帧间变化中位数。短镜可能为 null（采样点不够） |
-| `size` | enum | 景别，见 `taxonomy.md`。黑场与字卡用 `none` |
-| `category` | enum | 镜头类别——这一镜干什么活 |
-| `camera` | enum | 运镜。**和 `motion` 对账**：声称大幅运镜却实测不动，门拦 |
-| `transitionIn` | enum | 这一镜**怎么进来**的，可省略（等于 `cut`） |
-| `subjects` | string[] | 画内人物的 `cast` 编号；空镜给空数组 |
-| `frame` | string | **画面描述**，12 字起，写看得见的东西。空话词表和废话开头都会被拦 |
-| `onscreenText` | string | 画面上不是台词的文字：片名、字卡、界面文字。可空 |
-| `audio` | string | 台词、旁白、关键音效。**烧录的对白字幕算台词写这里** |
-| `note` | string | 备注，可选。短于 `minShotSeconds` 的镜头**必须**写（说明是闪切还是检测碎片） |
+| `id` | string | Shot number `S01`: zero-padded to two digits, starting at 1, **consecutive in order**. It is also the key-frame file name (`S01a.jpg` / `S01b.jpg`) |
+| `start` / `end` | number | Start and end in seconds, two decimals. **Neighbouring shots butt together**, the first starts at 0, the last ends at the film length |
+| `seconds` | number | `end − start`. Stored redundantly so a gate can cross-check it |
+| `motion` | number\|null | Median measured frame-to-frame change. A short shot may be null (not enough samples) |
+| `size` | enum | Shot size — see `taxonomy.md`. Black frames and cards use `none` |
+| `category` | enum | Shot category — what job this shot does |
+| `camera` | enum | Camera move. **Cross-checked against `motion`**: a large move claimed with no measured motion stops the gate |
+| `transitionIn` | enum | How this shot **comes in**; optional (means `cut`) |
+| `subjects` | string[] | `cast` ids of the people in frame; an empty shot gets an empty array |
+| `frame` | string | **Frame description.** Minimum `minFrameChars` non-whitespace characters; write what is visible. The puffery list and the filler openers are checked |
+| `onscreenText` | string | On-screen text that is not dialogue: title, cards, UI text. May be empty |
+| `audio` | string | Dialogue, narration, key sound effects. **A burned-in dialogue subtitle counts as dialogue and goes here** |
+| `note` | string | Remark, optional. A shot shorter than `minShotSeconds` **must** have one (say whether it is a flash cut or a detection fragment) |
 
 ## params
 
-全部可省略，省略走默认值。按片子调的通常只有前两个。
+All optional; an omitted value takes its default. Only the first two are usually tuned per film.
 
-| 字段 | 默认 | 作用 |
+| field | default | effect |
 | --- | --- | --- |
-| `sceneThreshold` | 0.3 | 场景检测阈值。**暗戏、慢片要往下调**（0.15 左右），快切广告可以往上 |
-| `minShotSeconds` | 0.3 | 短于它的碎片在 seed 时并进上一镜 |
-| `boundaryTolerance` | 0.05 | 相邻镜头首尾相接的容差 |
-| `endTolerance` | 0.25 | 末镜收尾对片长的容差 |
-| `cutTolerance` | 0.1 | 镜头边界对齐 `seedCuts` / `manualCuts` 的容差 |
-| `staticMaxMotion` | 1.5 | 实测低于它 = 画面几乎没动（运镜门的拦截线） |
-| `busyMinMotion` | 12 | 实测高于它 = 动得厉害（只出提示，不拦） |
-| `motionGateMinSeconds` | 1 | 短于它的镜头不查运镜（采样点太少，一个尖峰就能翻案） |
-| `minFrameChars` | 12 | 画面描述的最低字数 |
-| `trackHz` | 5 | 运动曲线采样率 |
-| `frameDir` | `frames` | 关键帧目录 |
+| `sceneThreshold` | 0.3 | Scene-detection threshold. **Lower it for dark or slow films** (around 0.15); a fast-cut ad may go higher |
+| `minShotSeconds` | 0.3 | A fragment shorter than this is merged into the previous shot during `seed` |
+| `boundaryTolerance` | 0.05 | Tolerance for neighbouring shots butting together |
+| `endTolerance` | 0.25 | Tolerance between the last shot's end and the film length |
+| `cutTolerance` | 0.1 | Tolerance that aligns a shot boundary to `seedCuts` / `manualCuts` |
+| `staticMaxMotion` | 1.5 | Below this the frame barely moved (the blocking line of the camera gate) |
+| `busyMinMotion` | 12 | Above this the frame moves hard (a hint only, no block) |
+| `motionGateMinSeconds` | 1 | Shots shorter than this are not checked by the camera gate (too few samples — one spike would overturn it) |
+| `minFrameChars` | 12 | Minimum non-whitespace characters in a frame description. Tuned for Chinese; raise it for English |
+| `trackHz` | 5 | Sampling rate of the motion curve |
+| `frameDir` | `frames` | Key-frame directory |
 
-## 运动曲线 track.json（单独一份）
+## The motion curve track.json (a separate file)
 
 ```json
-{ "hz": 5, "values": [7.4, 8.9, 14.4, "…每 0.2 秒一个点"] }
+{ "hz": 5, "values": [7.4, 8.9, 14.4, "…one point every 0.2 seconds"] }
 ```
 
-**不进 shots.json**——它有上千个数字，混在工作稿里只会碍事，还容易被改坏。
-`validate` 和 `render` 用 `--track` 挂上；不挂就**明说跳过运镜实测对账**，其余门照跑。
+**It does not go into shots.json.** It holds thousands of numbers; inside a working draft it only gets
+in the way and is easy to corrupt. `validate` and `render` attach it with `--track`. Without it they
+**say plainly that the camera cross-check was skipped**, and the other gates run as normal.
 
-曲线的含义：相邻采样帧缩到 64×36 之后的逐像素差分均值。值越大画面变化越剧烈——
-**它不区分是机位在动还是主体在动**，所以门只拦一个方向（见 `taxonomy.md` 的实测档）。
+What the curve means: the mean per-pixel difference between neighbouring sample frames after scaling
+to 64×36. A larger value means a bigger picture change. **It does not separate camera movement from
+subject movement**, so the gate blocks in one direction only (see the measured tiers in `taxonomy.md`).
 
-## 关键帧
+## Key frames
 
-每镜两张，都由 `frames` 命令抽：
+Two per shot, both extracted by the `frames` command:
 
-- `frames/S01a.jpg`——镜头**起手**（进入 15% 处，避开转场帧）
-- `frames/S01b.jpg`——镜头**收尾**（85% 处）
+- `frames/S01a.jpg` — the shot's **opening** (15% in, past the transition frames)
+- `frames/S01b.jpg` — the shot's **closing** (85% in)
 
-**a 和 b 对照着看就是运镜**：取景变了是推拉摇移，取景没变只有人动了是固定机位。
-`sheet` 把 a 表和 b 表各拼成联系表，一屏看二十几个镜头，比一张张翻快一个数量级。
+**Read a and b together and you have the camera move**: the framing changed, that is a push, pull, pan
+or track; the framing held and only a person moved, that is a locked camera. `sheet` tiles the a set
+and the b set into contact sheets — two dozen shots on one screen, an order of magnitude faster than
+one image at a time.

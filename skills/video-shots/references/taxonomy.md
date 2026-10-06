@@ -1,140 +1,169 @@
-# 词表：景别 / 类别 / 运镜 / 转场
+# Vocabularies: shot size / category / camera move / transition
 
-四张表，全部是**枚举**，validate 逐个对账。写不在表里的词当场拦——拉片表的价值在于可汇总，
-每人一套说法的表统计不出任何东西。
+Four tables. Every one is an **enum**, and `validate` checks each value against it. A word that is
+not in a table fails on the spot. A shot table has value because it can be aggregated. A table where
+every analyst invents their own wording aggregates to nothing.
 
-判不准的时候，按这份文档的判据选**最保守的那个**，然后把不确定写进 `note`。**猜一个确定的词
-比写一个模糊的词更糟**：前者会被下游当成事实，后者至少留着疑问。
+When a call is unclear, pick the **most conservative** value using the criteria below, then write the
+uncertainty into `note`. **Guessing a confident value is worse than writing a hedged one**: the first
+one becomes a fact downstream; the second one at least keeps the doubt visible.
 
----
-
-## 一、景别（`size`）
-
-按**人物在画框里占多大**判，不按镜头焦段判。画面里没有人就按同等距离的物体换算。
-
-| 值 | 中文 | 判据 |
-| --- | --- | --- |
-| `none` | 无景别 | 黑场、纯字卡、纯图形——画框里没有被取景的空间。**字卡和黑场一律用它**，别硬套景别 |
-| `extreme-wide` | 大远景 | 人小于画高的 1/4，或根本找不到人：山川、城市、全景航拍 |
-| `wide` | 全景 | 人占画高 1/3 到全身带环境，脚在画内 |
-| `medium-wide` | 中远景 | 膝盖以上到全身，环境仍占大半 |
-| `medium` | 中景 | 腰以上，环境还看得清 |
-| `medium-close` | 中近景 | 胸以上，背景开始虚化——**对话戏的默认景别** |
-| `close` | 特写 | 肩以上，脸占画面大半；物体特写同级 |
-| `extreme-close` | 大特写 | 五官局部、手指、物件细节，画面里只剩一件东西 |
-
-**两个常见的判错**：
-
-- **把过肩镜头（OTS）判成全景**——前景的肩膀只是遮挡，按**被拍的那个人**占多大判，通常是中近景。
-- **把浅景深当特写**——背景虚不虚和景别没关系，看人占画框多少。
-
-## 二、类别（`category`）：这一镜在片子里干什么活
-
-景别回答「拍得多近」，类别回答「为什么要有这一镜」。**一镜只能选一个类别**——它同时在干两件事的时候，
-选**剪辑师删掉它会最先心疼的那件**。
-
-| 值 | 中文 | 干的活 | 必须拿出的证据（门查） |
-| --- | --- | --- | --- |
-| `establishing` | 定场 | 交代这是哪儿、有谁、什么时间。换景第一镜通常是它 | — |
-| `subject` | 主体 | 跟着人或物体走的常规叙事镜头 | — |
-| `dialogue` | 对话 | 有人在说话，正反打的任意一边 | `audio` 非空 |
-| `reaction` | 反应 | 不说话，只有听、看、愣住——**短剧里最便宜的戏** | `subjects` 非空 |
-| `insert` | 插入特写 | 一个动作或细节被单独拎出来当重音：手按住箱盖、刀落在骨头上 | — |
-| `pov` | 主观 | 画面就是某个人眼睛看到的东西 | — |
-| `empty` | 空镜 | 画面里没有人，只有环境、天气、物件 | `subjects` 必须为空 |
-| `product` | 产品展示 | 商品/界面被当作主角展示（广告片、带货片的主力） | — |
-| `text-card` | 字卡 | 画面主体就是文字：标题、口播字幕卡、片尾版权 | `onscreenText` 非空 |
-| `transition` | 转场镜头 | 这一镜本身是过渡：黑场、白闪、专门用来接的空景 | — |
-| `archive` | 引用素材 | 屏摄、新闻画面、别人的片段、闪回的旧素材 | — |
-
-**类别与景别不是一回事，别联动**。特写不一定是 `insert`（说话的大特写是 `dialogue`），
-全景也不一定是 `establishing`（打斗的全景是 `subject`）。
-
-## 三、运镜（`camera`）
-
-**先问一句：整幅画面动了吗？** 画面不动、只有人在动，那就是 `static`——这是最常被写错的一条。
-
-| 值 | 中文 | 实测档 | 判据 |
-| --- | --- | --- | --- |
-| `static` | 固定 | still | 机位不动。人在画面里跑也照样是固定 |
-| `push-in` | 推 | strong | 机身整体靠近被摄体，背景透视跟着变 |
-| `pull-out` | 拉 | strong | 机身整体后退 |
-| `zoom-in` / `zoom-out` | 变焦推 / 变焦拉 | strong | 焦段变化，**透视不变**——和推拉的区别就在背景会不会「涌过来」 |
-| `pan-left` / `pan-right` | 左摇 / 右摇 | strong | 机位不动，机身水平转 |
-| `tilt-up` / `tilt-down` | 上摇 / 下摇 | strong | 机位不动，机身垂直转 |
-| `truck-left` / `truck-right` | 左移 / 右移 | strong | 机身水平平移 |
-| `pedestal-up` / `pedestal-down` | 升 / 降 | strong | 机身垂直升降 |
-| `tracking` | 跟拍 | strong | 跟着运动的主体走，主体在画框里位置基本不变 |
-| `arc` | 环绕 | strong | 绕着主体转圈 |
-| `whip-pan` | 甩镜 | strong | 快到拉出模糊的摇，通常兼作转场 |
-| `handheld` | 手持微晃 | subtle | 构图不变，画面持续小幅呼吸——**纪实感的主要来源** |
-| `shake` | 剧烈晃动 | strong | 大幅度抖动：爆炸、奔跑、假装摄影机被撞 |
-| `rack-focus` | 变焦点 | subtle | 机位构图都不变，焦点在前后景之间转移 |
-| `micro-push` | 微推 | subtle | 极慢的推，几秒内只走一点点——情绪镜头常用 |
-| `roll` | 旋转 | strong | 画面绕光轴转 |
-| `drone` | 航拍移动 | strong | 空中机位的整体位移 |
-
-**实测档（`motion`）是这个词在像素上必然留下的痕迹**，运镜门就查这一条：
-
-- `strong`：整幅画面必然移动。**实测帧间变化接近 0 就一定是判错了**——门在这里拦。
-- `still`：机位不动。实测偏高时门**不拦**，只出提示——固定机位前面有人跳舞，帧间差一样会爆。
-- `subtle`：变化太小或太局部，实测值区分不开，**不设门**，数值给人看。
-
-一镜里运镜变了怎么办：**写主导的那个**，另一个写进 `note`（「前半跟拍，后半停成固定」）。
-要是两段各自都足够长、足够重要，那说明这里该补一刀（`recut --split`）。
-
-## 四、转场（`transitionIn`）：这一镜是**怎么进来**的
-
-可省略，省略等于 `cut`。
-
-| 值 | 中文 | 判据 |
-| --- | --- | --- |
-| `cut` | 硬切 | 一帧之内换画面。绝大多数镜头都是它 |
-| `dissolve` | 叠化 | 两个画面重叠几帧到几十帧。**检测器在这里最容易漏刀**，切点取叠化的中点 |
-| `fade-in` | 淡入 | 从黑（或白）淡出画面 |
-| `fade-out` | 淡出 | 画面淡到黑（或白）。黑场本身单独成镜时，它的入点就是 `fade-out` |
-| `whip` | 甩切 | 靠一次甩镜的模糊接上 |
-| `match-cut` | 匹配剪辑 | 前后两镜的形状或动作对齐了才切 |
-| `wipe` | 划像 | 一条边推过画面 |
-| `morph` | 特效转场 | 变形、粒子、模板动效 |
+The enum keys below are what goes into `shots.json`. The report prints each value with the English
+label defined in `scripts/video-shots.mjs` (mostly the key with spaces: `close` → close-up, `none` →
+n/a, `pov` → POV). `--lang zh` prints Chinese labels instead. **Fill the key, never the label.**
 
 ---
 
-## 画面（`frame`）：要能拿去核对
+## 1. Shot size (`size`)
 
-一句话，**12 字起**，写**看得见的东西**：谁在画框的什么位置、在做什么、光从哪来、
-前景背景有什么。写完自问一句：**只看这句话，能不能在片子里把这一镜找出来？**
+Judge by **how much of the frame a person fills**, not by focal length. When no person is in frame,
+convert from an object at the same distance.
 
-空话词表（门查，写到就拦）：氛围感、高级感、视觉冲击、令人、唯美、美不胜收、大气磅礴、
-震撼人心、画面感十足、很美、非常美、精美绝伦、赏心悦目、引人入胜。
-
-也不许用「这个镜头……」开头——镜头表里每一行都是镜头。
-
-| 差 | 好 |
+| value | criteria |
 | --- | --- |
-| 这个镜头氛围感很强，很有电影感 | 土屋门洞逆光，老太太扶着门框往外冲，门板和灶台在前景糊成虚影 |
-| 老太太在说话 | 老太太伏在柜台边上，一只手按着台面，嘴张着还在往下说，窗外是雪地反光 |
-| 特写一只手 | 烛台边的旧书和放大镜，枯瘦的手按在纸面上一寸寸往前推 |
+| `none` | Black frame, title card only, graphics only — no photographed space in the frame. **Use it for every card and every black frame.** Do not force a shot size onto it |
+| `extreme-wide` | A person is under 1/4 of frame height, or cannot be found at all: mountains, cityscapes, wide aerials |
+| `wide` | A person fills 1/3 of frame height up to the full body with the environment, feet inside frame |
+| `medium-wide` | Knees up to full body, the environment still takes most of the frame |
+| `medium` | Waist up, the environment is still readable |
+| `medium-close` | Chest up, the background starts to fall out of focus — **the default size of a dialogue scene** |
+| `close` | Shoulders up, the face takes most of the frame; an object close-up sits at the same level |
+| `extreme-close` | Part of a face, a finger, the detail of an object — one thing left in the frame |
 
-**两镜的画面描述不许一字不差**（门查）。真的是同机位重复，那也要写出差别：机位更近了、
-动作进行到哪一步了、光变了没有。
+**Two common misjudgments:**
 
-## 字幕、台词、画面文字怎么归
+- **Judging an over-the-shoulder shot (OTS) as `wide`.** The shoulder in the foreground is only an
+  occlusion. Judge by how much of the frame **the person being filmed** fills — usually `medium-close`.
+- **Treating shallow depth of field as a close-up.** Background blur has nothing to do with shot size.
+  Look at how much of the frame the person fills.
 
-一条规矩，别拧巴：
+## 2. Category (`category`): what job this shot does in the film
 
-- **`audio`**：**说出来的话**——台词、旁白、画外音，以及关键音效与音乐（「门被撞开」「唢呐起」）。
-  烧录在画面上的对白字幕**算台词**，写进这里，带上说话人。
-- **`onscreenText`**：**不是台词的画面文字**——片名、字卡、时间提示（「十分钟前」）、
-  路牌、手机界面上的字、片尾版权。
+Shot size answers "how close". Category answers "why does this shot exist". **One shot gets one
+category.** When it does two jobs at once, pick the one **the editor would mourn first if it were cut**.
 
-分不清就问：**这行字是不是有人在说？** 是就进 `audio`，不是就进 `onscreenText`。
+| value | the job it does | evidence it must produce (checked by a gate) |
+| --- | --- | --- |
+| `establishing` | States where this is, who is there, what time. Usually the first shot after a location change | — |
+| `subject` | Ordinary narrative coverage that follows a person or a thing | — |
+| `dialogue` | Someone is speaking; either side of a shot/reverse-shot | `audio` non-empty |
+| `reaction` | No speech — only listening, watching, freezing. **The cheapest drama in a short drama** | `subjects` non-empty |
+| `insert` | One action or detail lifted out as an accent: a hand pressing a lid down, a knife landing on bone | — |
+| `pov` | The frame is what a specific person's eyes see | — |
+| `empty` | No person in frame — environment, weather, objects only | `subjects` must be empty |
+| `product` | A product or an interface presented as the protagonist (the workhorse of ads and selling videos) | — |
+| `text-card` | The frame is text: a title, a caption card, end credits | `onscreenText` non-empty |
+| `transition` | The shot itself is a transition: black, white flash, scenery placed there to join two scenes | — |
+| `archive` | Screen recordings, news footage, someone else's clip, older flashback material | — |
 
-## 主体（`subjects`）
+**Category and shot size are not the same axis. Do not couple them.** A close-up is not automatically
+`insert` (a talking close-up is `dialogue`), and a wide shot is not automatically `establishing`
+(a wide fight is `subject`).
 
-写顶层 `cast` 里的编号（`P1` `P2`…），不写名字——名字会变，编号不会。谁进画框写谁，
-**画外说话的人不算**（他的话进 `audio`，标明「（画外）」）。空镜留空数组。
+## 3. Camera move (`camera`)
 
-第一遍拉片先不建 `cast`：先把人当「老太太」「老中医」记在画面描述里，
-等全片过完一遍、确定谁是谁、谁只出现一次，再回头编号并回填。**`cast` 是可选的**，
-不建就跳过主体对账门，但会少一份「谁的戏最多」的统计。
+**Ask one question first: did the whole frame move?** If the frame did not move and only a person
+moved inside it, that is `static`. This is the most frequently miswritten field.
+
+| value | measured tier | criteria |
+| --- | --- | --- |
+| `static` | still | The camera does not move. A person running across the frame is still `static` |
+| `push-in` | strong | The whole camera moves toward the subject; background perspective changes with it |
+| `pull-out` | strong | The whole camera moves back |
+| `zoom-in` / `zoom-out` | strong | Focal length changes, **perspective does not** — the difference from a push/pull is whether the background "comes forward" |
+| `pan-left` / `pan-right` | strong | The camera position holds; the camera rotates horizontally |
+| `tilt-up` / `tilt-down` | strong | The camera position holds; the camera rotates vertically |
+| `truck-left` / `truck-right` | strong | The camera translates horizontally |
+| `pedestal-up` / `pedestal-down` | strong | The camera translates vertically |
+| `tracking` | strong | Follows a moving subject; the subject keeps roughly the same position in frame |
+| `arc` | strong | Circles around the subject |
+| `whip-pan` | strong | A pan fast enough to pull motion blur; often doubles as a transition |
+| `handheld` | subtle | Composition holds, the frame breathes in small continuous motion — **the main source of a documentary feel** |
+| `shake` | strong | Large-amplitude shaking: an explosion, a run, a camera that pretends to be shoved |
+| `rack-focus` | subtle | Camera and composition hold; focus moves between foreground and background |
+| `micro-push` | subtle | An extremely slow push, a small travel over several seconds — common in emotional shots |
+| `roll` | strong | The frame rotates around the lens axis |
+| `drone` | strong | Overall displacement of an aerial camera position |
+
+**The measured tier (`motion`) is the trace this camera move must leave in the pixels.** The camera
+gate checks exactly that:
+
+- `strong`: the whole frame must move. **If measured frame-to-frame change is near zero, the call is
+  wrong** — the gate stops it here.
+- `still`: the camera position holds. When the measurement is high the gate **does not stop it**, it
+  only emits a hint — a dancer in front of a locked camera also blows up the frame difference.
+- `subtle`: the change is too small or too local for the measurement to separate. **No gate.** The
+  number is shown to the human.
+
+What if the camera move changes inside one shot: **write the dominant one**, and put the other in
+`note` ("tracking in the first half, locked off in the second"). If both halves are long enough and
+important enough, that is a sign the shot needs a cut (`recut --split`).
+
+## 4. Transition (`transitionIn`): how this shot **comes in**
+
+Optional. Omitting it means `cut`.
+
+| value | criteria |
+| --- | --- |
+| `cut` | The picture changes inside one frame. Most shots are this |
+| `dissolve` | Two pictures overlap for a few frames to tens of frames. **The detector misses cuts here most often**; the cut point is the midpoint of the dissolve |
+| `fade-in` | The picture fades up from black (or white) |
+| `fade-out` | The picture fades down to black (or white). When a black frame is a shot of its own, its entry point is `fade-out` |
+| `whip` | Joined by the blur of one whip pan |
+| `match-cut` | The cut happens only after the shape or the action of the two shots lines up |
+| `wipe` | An edge pushes across the frame |
+| `morph` | Morph, particles, template motion |
+
+---
+
+## Frame description (`frame`): it must be checkable
+
+One sentence. Write **what is visible**: who is where in the frame, what they are doing, where the
+light comes from, what sits in the foreground and the background. Then ask yourself:
+**from this sentence alone, could I find this shot in the film?**
+
+The gate counts non-whitespace characters and requires `params.minFrameChars` (default 12). That floor
+is tuned for Chinese, where 12 characters is a real phrase. **In English 12 characters is about two
+words, so the gate does not bite.** Treat the English floor as 8 words or more, and raise
+`params.minFrameChars` (for example 60) if you want the machine to enforce it.
+
+The puffery blacklist and the filler-opener check in `scripts/video-shots.mjs` (`VAGUE_WORDS` and
+`FILLER_OPENERS`) list Chinese words only, so they never fire on English text. English puffery —
+"cinematic", "moody", "stunning", "beautiful shot" — passes the gate. Nothing will stop it, so the
+rule is yours to hold.
+
+Do not open with "this shot …" either. Every row of a shot table is a shot.
+
+| bad | good |
+| --- | --- |
+| Very cinematic mood, feels like a film | Backlit doorway of an earth-walled house; an old woman grips the doorframe leaning out, the door plank and the stove blurred in the foreground |
+| An old woman is talking | An old woman leans on the counter, one hand flat on the top, her mouth still open mid-sentence, snow light from the window behind |
+| Close-up of a hand | An old book and a magnifier beside a candle; a thin hand pushes paper forward an inch at a time |
+
+**Two shots must not have identical frame descriptions** (checked by a gate). If the same camera
+position really repeats, still write the difference: the camera is closer, how far the action has
+progressed, whether the light changed.
+
+## Where subtitles, dialogue, and on-screen text go
+
+One rule, no wrangling:
+
+- **`audio`**: **what is spoken** — dialogue, voice-over, narration, plus key sound effects and music
+  ("a door is shoved open", "a suona starts"). A dialogue subtitle burned into the picture **counts as
+  dialogue**: put it here, with the speaker. Quote it as it appears on screen; add an English
+  translation in parentheses when it is not English.
+- **`onscreenText`**: **on-screen text that is not someone speaking** — the title, cards, time marks
+  ("ten minutes earlier"), road signs, text inside a phone UI, end credits.
+
+When you cannot tell, ask: **is a person saying this line?** Yes → `audio`. No → `onscreenText`.
+
+## Subjects (`subjects`)
+
+Write the ids from the top-level `cast` (`P1`, `P2`, …), not names — names change, ids do not. List
+whoever is in frame. **A person speaking off screen does not count** (their words go in `audio`,
+marked "(off screen)"). An empty shot gets an empty array.
+
+Do not build `cast` on the first pass. Write people as "the old woman" or "the old doctor" inside the
+frame description. After the whole film is through, once you know who is who and who appears only
+once, go back and assign ids. **`cast` is optional.** Without it the subject gate is skipped, but you
+lose the "who carries the most screen time" statistics.

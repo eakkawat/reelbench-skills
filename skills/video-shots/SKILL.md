@@ -2,19 +2,18 @@
 name: video-shots
 version: 1.0.0
 description: |
-  拉片：把一条成片拆成逐镜头的分析表——每个镜头的时长、景别、类别、运镜、画面。
-  分工刻在骨子里：**能量的都由代码量**（切点来自 ffmpeg 场景检测，时长是切点相减，
-  运动量是逐帧差分的中位数），模型只判断它真正该判断的四件事（景别 / 类别 / 运镜 / 画面），
-  然后每一条判断都被代码当场对账——**声称推拉摇移却实测几乎不动，门直接拦**。
-  看片走联系表（每镜起手帧 + 收尾帧各拼一张大图，一屏二十几个镜头，a/b 对照就是运镜），
-  不是一张张翻。检测漏刀多刀用 recut 补刀并刀，自动重编号重算时长，手改边界过不了门。
-  产出 shots.json + Markdown 镜头表 + **单页交互式拉片报告**：内嵌播放器（播放时同步高亮镜头、
-  点镜头跳转）、镜头节奏带、可搜索可筛选可排序的镜头表（列表 / 卡片两种视图、首尾关键帧并排、
-  点图开大图）、景别类别运镜分布、出场人物、质量门、导出 JSON。单文件零依赖，离线双击能开。
-  14 道质量门全部由脚本确定性检查。
-  零依赖、零 API key，只要 node 和 ffmpeg。
-  Use when asked to 拉片、拆镜头、分析视频镜头、镜头时长、景别、运镜、镜头表、
-  video shot breakdown、shot list from video。
+  Shot breakdown: turn one finished video into a shot-by-shot table — duration, shot size,
+  category, camera move, frame description. Code measures every measurable thing (cuts from
+  ffmpeg scene detection, durations by subtracting cuts, motion as the median frame
+  difference); the model judges only size / category / camera move / frame; code audits each
+  claim, so a shot that claims a push, pull, pan or tracking move while measured motion is
+  near zero fails a gate. `recut --split / --merge` repairs missed or spurious cuts and
+  re-measures. Output: shots.json, a Markdown shot table, and a single-file interactive HTML
+  report (synced player, pace strip, searchable sortable table, distributions, cast, quality
+  gates) — English by default, `--lang zh` for Chinese. 14 deterministic gates. Needs
+  node >= 18 and ffmpeg; no API keys. Use for a shot breakdown, shot list, shot count,
+  average shot length, cuts per minute, shot size or camera-move analysis. Also matches
+  拉片 / 拆镜头 / 镜头表 / 景别 / 运镜 / 分析视频.
 allowed-tools:
   - Read
   - Write
@@ -36,66 +35,81 @@ metadata:
   license: Apache-2.0
   requires:
     bins:
-      - node      # >= 18，只用标准库，无 npm 依赖
-      - ffmpeg    # 场景检测、运动测量、抽帧、联系表
-      - ffprobe   # 片长、帧率、分辨率
+      - node      # >= 18, standard library only, no npm dependencies
+      - ffmpeg    # scene detection, motion measurement, frame extraction, contact sheets
+      - ffprobe   # film length, frame rate, resolution
   runtimes:
     - claude-code
     - codex
+    - pi
 ---
 
 ## video-shots
 
-给成片**拉片**——把一条片子拆成逐镜头的分析表：**时长、景别、类别、运镜、画面**。
+Break a finished film into shots — for every shot: **duration, shot size, category, camera move, frame**.
 
-**前提刻在骨子里：镜头边界是量出来的，不是看出来的。** 模型看视频最不可靠的就是报时间——
-「这个镜头大概 3 秒」和「2.97 秒」差的不是精度，是这份表能不能用。所以这里划一条死线：
+**The premise is built in: shot boundaries are measured, not eyeballed.** The least reliable thing a
+model does when it watches video is report time — "about 3 seconds" and "2.97 seconds" differ by more
+than precision; they decide whether the table is usable. So the line is drawn here:
 
-| 谁来定 | 什么 | 怎么定 |
+| who decides | what | how |
 | --- | --- | --- |
-| **代码** | 切点、时长、片长、帧率 | ffmpeg 场景检测 + ffprobe，两位小数 |
-| **代码** | 每个镜头的实测运动量 | 逐帧差分曲线的区间中位数（两端剔除，避开切点尖峰） |
-| **模型** | 景别、类别、运镜、画面 | 看关键帧判断——**只有这四件事是模型的活** |
-| **代码** | 判断对不对 | 14 道质量门，逐条对账 |
+| **code** | cut points, durations, film length, frame rate | ffmpeg scene detection + ffprobe, two decimals |
+| **code** | measured motion per shot | the median of the per-frame difference curve over the interval (both ends trimmed, away from the cut spike) |
+| **the model** | shot size, category, camera move, frame | judged from key frames — **these four are the model's only job** |
+| **code** | whether those judgements hold | 14 quality gates, each claim cross-checked |
 
-最硬的一道门是**运镜实测对账**：摄影机真动了，像素不可能不变。所以「声称推/拉/摇/移/跟，
-实测帧间变化接近 0」这一向直接拦——这是模型拉片最常见的幻觉。反过来（声称固定、实测很动）
-**不拦**，只出提示：固定机位前面有人跳舞，帧间差一样会爆。
+The hardest gate is the **camera cross-check**: if the camera really moved, the pixels cannot have stayed
+still. So "claims push/pull/pan/track while measured frame-to-frame change is near zero" is blocked
+outright — the most common hallucination when a model breaks down a film. The reverse (claims static,
+measured high) is **not blocked**, only hinted: a dancer in front of a locked camera also blows up the
+frame difference.
 
-`{baseDir}` = 本文件所在目录。脚本 `{baseDir}/scripts/video-shots.mjs`，零依赖，`node` 直接跑。
+`{baseDir}` = the directory holding this file. The script is `{baseDir}/scripts/video-shots.mjs`: no
+dependencies, run it with `node` directly.
 
-**边界（不做的事）**：不转写语音（没有 ASR，台词靠画面上烧录的字幕读，读不到就留空并说明）、
-不做人脸识别与人物自动归并（`cast` 是人工编号）、不评价片子好坏（报告只给事实和统计）、
-不剪辑不导出片段、不做镜头内的物体检测。
+**Language: English is the default.** The report and the Markdown table are English out of the box;
+`--lang zh` switches them to Chinese. The reference documents ship in both languages —
+`{baseDir}/references/` (English, the default) and `{baseDir}/references/zh/` (Chinese).
+
+**Boundaries (what this does not do)**: no speech transcription (there is no ASR — lines are read off
+burned-in subtitles, and left empty with a note when absent), no face recognition and no automatic cast
+merging (`cast` ids are assigned by hand), no judgement of whether the film is good (the report gives
+facts and statistics), no editing and no clip export, no object detection inside a shot.
 
 ---
 
-### Step 0 — 定输入与范围
+### Step 0 — Fix the input and the range
 
-只要一个视频文件。先问清两件事，问不到就按默认走并在汇报里说明：
+One video file is all it needs. Settle two things first; if you cannot, take the default and say so in
+the report:
 
-- **拉全片还是拉一段**：全片是默认。只要某一段就先用 ffmpeg 裁出来再拉，别在整片上标一半。
-- **拉来干什么**：做仿写参考（重画面与运镜）、做剪辑节奏分析（重时长与类别）、
-  做投放素材盘点（重产品镜与字卡）。用途不同，`note` 里该多记什么不同——**表的结构是一样的**。
+- **the whole film or one stretch**: the whole film is the default. When only one stretch matters, cut
+  it out with ffmpeg first and break that down — do not mark half a film on a whole-film table.
+- **what the breakdown is for**: a reference for imitation (weight picture and camera move), an editing
+  rhythm analysis (weight duration and category), an inventory of ad material (weight product shots and
+  cards). The purpose changes what `note` should carry — **the table structure stays the same**.
 
-### Step 1 — seed 工作底稿 ⛔ 切点在这一步定死
+### Step 1 — Seed the working draft ⛔ the cut points are fixed here
 
 ```bash
-cd <输出目录>
-node {baseDir}/scripts/video-shots.mjs seed <video> --track track.json --title "<片名>" > shots.json
+cd <output dir>
+node {baseDir}/scripts/video-shots.mjs seed <video> --track track.json --title "<title>" > shots.json
 ```
 
-stderr 会报：片长、帧率、分辨率、检测到几个切点、合并后几个镜头。**先看这一行再往下走**：
+stderr reports: film length, frame rate, resolution, how many cut points were detected, how many shots
+survive merging. **Read that line before going on:**
 
-- 平均镜长十几秒、镜头数明显偏少 → 阈值高了，`--threshold 0.15` 重跑（暗戏、慢片、
-  同机位对话多的片子都要往下调）
-- 镜头数比肉眼数的多出一截 → 阈值低了，往 `0.4` 调，或留到 Step 4 用 `recut --merge` 并
-- 一条 3 分钟的片子跑完只要几秒钟，**多跑两遍比将就一份烂底稿划算**
+- average shot length of a dozen seconds, shot count clearly low → the threshold is too high, rerun with
+  `--threshold 0.15` (dark scenes, slow films, and films heavy on same-position dialogue all need it lower)
+- shot count well above what you can count by eye → the threshold is too low, move toward `0.4`, or merge
+  in Step 4 with `recut --merge`
+- a 3-minute film finishes in a few seconds. **Running it twice beats living with a bad draft.**
 
-底稿里 `start` / `end` / `seconds` / `motion` 已经填好，`size` / `category` / `camera` / `frame` 是空的——
-**那四个空格子才是模型的活**。
+The draft fills `start` / `end` / `seconds` / `motion` and leaves `size` / `category` / `camera` / `frame`
+empty — **those empty cells are the model's job.**
 
-### Step 2 — 抽关键帧与联系表
+### Step 2 — Extract key frames and contact sheets
 
 ```bash
 node {baseDir}/scripts/video-shots.mjs frames shots.json --video <video>
@@ -103,126 +117,152 @@ node {baseDir}/scripts/video-shots.mjs sheet shots.json --cols 4 --rows 6
 node {baseDir}/scripts/video-shots.mjs sheet shots.json --cols 4 --rows 6 --pick b
 ```
 
-每镜两张：`frames/S01a.jpg`（起手 15% 处）和 `S01b.jpg`（收尾 85% 处）。
-联系表把它们各拼成一张大图（行优先，S01 在左上），**a 表看内容，b 表看运镜**——
-同一格前后对照，取景变没变一眼就知道。
+Two frames per shot: `frames/S01a.jpg` (15% in) and `S01b.jpg` (85% in). The `sheet` command tiles them
+into large images (row-major, S01 top left). **The a sheet carries content, the b sheet carries camera
+move** — the same cell before and after shows whether the framing changed.
 
-**先看联系表，再看单帧。** 一张张翻完整部片是浪费额度：一张联系表 = 二十几个镜头，
-只在判不准的那几个镜头上回去看单帧（`Read frames/S07a.jpg`）。
+**Read the contact sheet first, the single frame second.** Watching a whole film one image at a time
+wastes the budget: one sheet is two dozen shots. Go back to single frames only for the shots you cannot
+call — read `frames/S07a.jpg`.
 
-### Step 3 — 逐批填四个字段
+### Step 3 — Fill the four fields, one batch at a time
 
-一批 ≤ 25 个镜头（正好一张联系表）。每批拿到：
+One batch is 25 shots or fewer (exactly one contact sheet). Each batch gets:
 
-- `{baseDir}/references/taxonomy.md`（四张词表 + 判据，**照着填**）和 `{baseDir}/references/analysis-pass.md`（怎么看、常见病）
-- 这一批的镜头底稿（镜号、起止、时长、**实测运动**）
-- 这一批的 a / b 两张联系表
+- `{baseDir}/references/taxonomy.md` (the four vocabularies and the criteria — **fill from it**) and
+  `{baseDir}/references/analysis-pass.md` (how to look, common diseases). To work in Chinese, read
+  `{baseDir}/references/zh/taxonomy.md` and `{baseDir}/references/zh/analysis-pass.md` instead.
+- the shot draft for this batch (number, start, end, duration, **measured motion**)
+- the a / b sheets for this batch
 
-填的顺序：**景别 → 类别 → 运镜 → 画面**。运镜看 a/b 取景差 + 实测运动值，
-两者打架时**信实测**。顺带记 `subjects` / `onscreenText` / `audio`——
-**画面上烧录的对白字幕算台词**，进 `audio` 并带上说话人；片名、字卡、界面文字进 `onscreenText`。
+Fill in this order: **shot size → category → camera move → frame**. Read the camera move off the a/b
+framing difference plus the measured motion value; when the two disagree, **trust the measurement**.
+Record `subjects` / `onscreenText` / `audio` as you go — **a dialogue subtitle burned into the picture
+counts as dialogue**: it goes in `audio` with the speaker. Titles, cards, and UI text go in
+`onscreenText`.
 
-编辑 `shots.json` 时**只动那几个字段**：`start` / `end` / `seconds` / `motion` / `seedCuts` / `meta`
-是机器字段，改了就是伪造证据，门会点名。
+When you edit `shots.json`, **touch only those fields**. `start` / `end` / `seconds` / `motion` /
+`seedCuts` / `meta` are machine fields — changing one fabricates evidence, and a gate names it.
 
-### Step 4 — 补刀与并刀（发现漏切就修，别将就）
+### Step 4 — Add cuts and merge cuts (fix what you find, do not live with it)
 
-场景检测必然在两个地方出错：叠化和暗场对暗场**漏刀**，手持晃动和闪光**多刀**。
-a 帧和 b 帧根本是两个场景，就是漏刀的铁证。
+Scene detection fails in two places for certain: dissolves and dark-into-dark **miss cuts**; handheld
+shake and flashes **add cuts**. An a frame and a b frame that are two different scenes is proof of a
+missed cut.
 
 ```bash
 node {baseDir}/scripts/video-shots.mjs recut shots.json --track track.json \
   --split 63.5 --split 127.37 --merge 45.97 > shots.new.json && mv shots.new.json shots.json
 ```
 
-自动重编号、重算时长与实测运动，补的刀记进 `manualCuts`（`boundary` 门认它）。
-**边界没动过的镜头标注原样保留；被拆被并的镜头标注清空并在 `note` 里写明出身**——
-这两半是不是一回事，得重新看画面，不许把旧描述顺下去。
+It renumbers, recomputes durations and measured motion, and records the added cuts in `manualCuts` (the
+`boundary` gate accepts them). **Shots whose boundaries did not move keep their annotations unchanged;
+shots that were split or merged have their annotations cleared and their origin written in `note`** —
+whether the two halves are the same thing needs a fresh look at the picture. Do not carry an old
+description over.
 
-改完重抽这些镜头的帧（`frames` 会覆盖整个目录，直接重跑就行），把清空的格子补上。
+Then re-extract the frames for those shots (`frames` rewrites the whole directory, so rerun it) and fill
+the cleared cells.
 
-### Step 5 — 校验 ⛔ 不能跳
+### Step 5 — Validate ⛔ never skip
 
 ```bash
 node {baseDir}/scripts/video-shots.mjs validate shots.json --track track.json --frames frames
 ```
 
-14 道门全是代码：时间轴连续（按序、首尾相接、从 0 到片尾）、时长自洽（`seconds` = `end − start`，
-短镜必须带 note）、镜号连号、**景别/类别/运镜三张词表**、转场枚举、**画面描述可核对**
-（12 字起 + 空话词表 + 不许「这个镜头…」开头）、**画面描述不重复**、主体对账 `cast`、
-**类别要有证据**（对话必须有台词、字卡必须有画面文字、反应必须写是谁、空镜里不许有人）、
-**运镜实测对账**、**边界来自检测**（自己加的刀必须在 `manualCuts` 里声明）、关键帧齐全。
+All 14 gates are code: timeline continuity (in order, butting together, 0 to the end), duration
+self-consistency (`seconds` = `end − start`, a short shot must carry a note), shot-number discipline,
+**the shot-size / category / camera vocabularies**, the transition enum, **frame description
+checkability** (a minimum length + a puffery list + no "this shot…" opener), **frame descriptions not
+repeated**, subjects cross-checked against `cast`, **category needs evidence** (dialogue needs a line, a
+card needs on-screen text, a reaction must say who, an empty shot may hold no people), **the camera
+cross-check**, **boundaries come from detection** (a cut you added must be declared in `manualCuts`),
+key frames present.
 
-**有违规逐条修，改完重跑，直到通过。** 跳过的门会明说原因（没给 `--track`、没建 `cast`、
-关键帧目录不存在）——**跳过不是通过**，汇报时要讲。
+**Fix each violation, rerun, and keep going until it passes.** A skipped gate says why (no `--track`, no
+`cast`, the key-frame directory does not exist) — **skipped is not passed**, and the report must say so.
 
-「提示（不拦）」那一栏不是错误，是需要人判断的地方：固定机位实测偏高，
-多半是主体在动，也可能是你把一次缓推看漏了，自己回去看一眼那一镜。
+The "hints (not blocking)" list is not a set of errors. Those are the places that need a human: a high
+measured motion against a static claim is usually a moving subject, but it may also be a slow push you
+missed — go look at that shot.
 
-### Step 6 — 出报告与汇报
+### Step 6 — Render and report
 
 ```bash
 node {baseDir}/scripts/video-shots.mjs render shots.json --md --track track.json > shots.md
 node {baseDir}/scripts/video-shots.mjs render shots.json --html --track track.json \
-  --video <原片相对报告的路径> > shots-report.html
+  --video <path to the source, relative to the report> > shots-report.html
 ```
 
-`--video` 给报告里的播放器指原片（默认用 JSON 里的 `source`；观众也能在页面上现场选本地文件）。
-界面语言用 `--lang zh|en`（默认中文）。`render` 自动去 `frames/` 找关键帧，
-**先抽帧再 render**，缺图明说缺、不摆占位图充数。
+`--video` points the player at the source (it defaults to `source` in the JSON; the viewer can also pick
+a local file in the page). **The output language is English by default**; add `--lang zh` for Chinese.
+`render` looks for key frames in `frames/`, so **extract frames before you render**; a missing image is
+reported, never replaced with a placeholder.
 
-报告是**单文件交互页**（样式与交互来自 `{baseDir}/scripts/report.css` 和 `report.js`，
-render 时整段内联；这三个文件必须一起拷走）：
+The report is a **single-file interactive page** (its style and behaviour come from
+`{baseDir}/scripts/report.css` and `report.js`, inlined whole at render time; these three files must be
+copied together):
 
-- **播放器**：播放时同步高亮当前镜头、填充时间轴进度；点任意镜头或时间轴片段跳过去
-- **镜头节奏带**：片宽 = 时长占比，颜色深浅 = 景别远近
-- **镜头表**：列表 / 卡片两种视图，首尾关键帧并排（对照着看就是运镜），可搜索（镜号、画面、
-  台词、人物）、可按类别筛选、可按时长排序；点关键帧开大图
-- **统计分布 / 出场人物 / 质量检查**：默认收起，按需展开；人物卡点一下筛出他的全部镜头
-- 页头一行给结论（`14 项通过 · 1 条提示`），提示里点名的镜号可以点着跳过去
+- **player**: playback highlights the current shot and fills the timeline; clicking any shot or timeline
+  segment jumps there
+- **pace strip**: one segment per shot, width = share of duration, colour depth = shot-size distance
+- **shot table**: list and card views, opening and closing key frames side by side (read together, that
+  is the camera move), searchable (shot number, frame, dialogue, person), filterable by category,
+  sortable by duration; click a key frame for the lightbox
+- **distributions / cast / quality checks**: collapsed by default; click a person card to filter their shots
+- the header states the verdict in one line (`14 passed · 1 hint`), and a shot id named in a hint is a
+  button that jumps there
 
-汇报一句话说清：**多少镜、平均镜长、每分钟切次、景别与运镜的大头、最长和最短的镜头在哪、
-报告路径**；补了几刀并了几刀、哪几道门跳过了、哪几条提示需要人看，明说。
+Report in one line: **how many shots, average shot length, cuts per minute, the dominant sizes and camera
+moves, where the longest and shortest shots are, and the report path.** State which cuts you added and
+merged, which gates were skipped, and which hints need a human.
 
-最终落地：
+Final output:
 
 ```
-<输出目录>/
-├── shots.json              ← 拉片主数据
-├── track.json              ← 运动曲线（机器证据，别手改）
+<output dir>/
+├── shots.json              ← the breakdown itself
+├── track.json              ← motion curve (machine evidence, do not hand-edit)
 ├── shots.md
-├── shots-report.html       ← 双击就能开
+├── shots-report.html       ← double-click to open
 ├── frames/                 ← S01a.jpg / S01b.jpg …
-└── sheets/                 ← sheet-a01.jpg / sheet-b01.jpg …（联系表）
+└── sheets/                 ← sheet-a01.jpg / sheet-b01.jpg … (contact sheets)
 ```
 
 ---
 
-## 边界
+## Boundaries
 
-- **没有语音转写。** 台词只来自画面上烧录的字幕；没有字幕的片子 `audio` 大面积留空是正常的，
-  这时把 `dialogue` 判成 `subject` 更诚实——类别证据门会逼你做这个选择
-- **实测运动不区分机位动还是主体动。** 所以运镜门只拦「声称大动却实测不动」这一向，
-  反向只出提示。想改松紧调 `params.staticMaxMotion` / `busyMinMotion`
-- **场景检测不认叠化。** 叠化段落的切点取中点，`transitionIn` 写 `dissolve`
-- **镜头数上限取决于耐心不是脚本。** 一部 90 分钟的片子能拉，但那是几十张联系表；
-  长片建议按章节裁段分次拉
-- 报告界面内置中英（`--lang`），**词表的中文名跟着界面走，画面描述原样不动**——那是内容不是标签
-- 报告要看视频得有原片：`--video` 指对路径，或在页面上现场选文件。报告本身不嵌视频数据
+- **No speech transcription.** Lines come only from burned-in subtitles. A film without subtitles has a
+  largely empty `audio`, which is normal; in that case judging `dialogue` as `subject` is the honest call
+  — the category-evidence gate forces you to make it
+- **Measured motion does not separate camera movement from subject movement.** So the camera gate blocks
+  one direction only ("claims motion, measured none"); the reverse is a hint. Tune
+  `params.staticMaxMotion` / `busyMinMotion` to change the tightness
+- **Scene detection does not recognise a dissolve.** The cut point in a dissolve is its midpoint, and
+  `transitionIn` is `dissolve`
+- **The shot count you can handle depends on patience, not on the script.** A 90-minute film is possible,
+  but that is dozens of contact sheets; for a feature, cut it into chapters and break each down separately
+- The report UI is bilingual (`--lang`, **English by default**). **The vocabulary labels follow the UI
+  language; the frame descriptions do not** — those are content, not labels
+- Watching the report needs the source: point `--video` at it, or pick the file in the page. The report
+  itself embeds no video data
 
-## 自测
+## Self-test
 
 ```bash
 node {baseDir}/scripts/selftest.mjs
 ```
 
-160 项断言，不调模型、不花额度、不碰 ffmpeg。**14 道门每一道都有击穿用例**——证明它真的会拦。
-改完脚本先跑这个。
+160 assertions. No model, no cost, no ffmpeg. **Every one of the 14 gates has a case that breaks it** —
+proof that it really blocks. Run this first after any change to the scripts.
 
-## 自带样例
+## Bundled sample
 
-`{baseDir}/examples/demo-shots.json` + `demo-track.json`：一条 202.9 秒的 AI 短片完整拉片——
-53 个镜头，平均镜长 3.83 秒，每分钟 15.7 切；对话占 58%、固定机位占 55%；
-最短 0.33 秒（雪地奔跑的闪切），最长 16.06 秒（结尾光柱下的长镜头）。
-`seedCuts` 之外补了 10 刀（叠化和片尾字卡各占一半，全部记在 `manualCuts` 里），
-14 道门全绿，留着一条运动提示当范例。它是质量基准，也是自测夹具。
+`{baseDir}/examples/demo-shots.json` + `demo-track.json`: a complete breakdown of a 202.9-second AI short
+— 53 shots, average shot length 3.83 seconds, 15.7 cuts per minute; dialogue 58%, static cameras 55%;
+the shortest shot 0.33 seconds (a flash cut in the snow run), the longest 16.06 seconds (the long take
+under the shaft of light at the end). Beyond `seedCuts` it adds 10 cuts (half dissolves, half end cards),
+all recorded in `manualCuts`. All 14 gates pass, and one motion hint is kept as an example. It is the
+quality baseline and the selftest fixture. **Its content is Chinese** — the film is Chinese and the file
+sets `"lang": "zh"`. It exists to test the tool, not to show what your English output should look like.

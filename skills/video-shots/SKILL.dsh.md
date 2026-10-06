@@ -131,8 +131,8 @@ call — `read_image` on the absolute path of `pull/frames/S07a.jpg`.
 
 One batch is 25 shots or fewer (exactly one contact sheet). Each batch gets:
 
-- `~/.dsh/skills/video-shots/references/en/taxonomy.md` (the four vocabularies and the criteria —
-  **fill from it**) and `~/.dsh/skills/video-shots/references/en/analysis-pass.md` (how to look, common
+- `~/.dsh/skills/video-shots/references/taxonomy.md` (the four vocabularies and the criteria —
+  **fill from it**) and `~/.dsh/skills/video-shots/references/analysis-pass.md` (how to look, common
   diseases)
 - the shot draft for this batch (number, start, end, duration, **measured motion**)
 - the a / b sheets for this batch

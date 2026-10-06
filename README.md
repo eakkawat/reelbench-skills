@@ -1,15 +1,15 @@
-[![中文](https://img.shields.io/badge/%E4%B8%AD%E6%96%87-285444?style=for-the-badge)](README.md)
-[![English](https://img.shields.io/badge/English-e2e6df?style=for-the-badge&labelColor=e2e6df&color=8b938a)](README.en.md)
+[![中文](https://img.shields.io/badge/%E4%B8%AD%E6%96%87-e2e6df?style=for-the-badge&labelColor=e2e6df&color=8b938a)](README.zh.md)
+[![English](https://img.shields.io/badge/English-285444?style=for-the-badge)](README.md)
 
 # reelbench-skills
 
-视频侧的 Claude Code / Codex skill。
+Claude Code / Codex skills for working with video.
 
-| skill | 干什么 |
+| skill | what it does |
 | --- | --- |
-| [video-shots](skills/video-shots/) | **拉片**：把一条成片拆成逐镜头的分析表——时长、景别、类别、运镜、画面。切点与时长由 ffmpeg 量，模型只判断该判断的四件事，14 道质量门逐条对账 |
+| [video-shots](skills/video-shots/README.md) | **Shot breakdown**: turns a finished film into a shot-by-shot table — duration, shot size, category, camera move, frame description. Cuts and durations are measured by ffmpeg; the model only judges the four things it should; 14 quality gates check every call. |
 
-## 安装
+## Install
 
 ```bash
 git clone https://github.com/eternityspring/reelbench-skills.git
@@ -17,38 +17,42 @@ cd reelbench-skills
 ./scripts/install.sh
 ```
 
-软链到 `~/.claude/skills/` 和/或 `~/.codex/skills/`（哪个装了就装到哪），**`git pull` 之后立刻生效**。
+This symlinks the skills into `~/.claude/skills/` and/or `~/.codex/skills/` (whichever exists),
+so **`git pull` takes effect immediately**.
 
 ```bash
-./scripts/install.sh --claude      # 只装到 Claude Code
-./scripts/install.sh --codex       # 只装到 codex
-./scripts/install.sh video-shots   # 只装某一个 skill
-./scripts/install.sh --uninstall   # 取消软链
+./scripts/install.sh --claude      # Claude Code only
+./scripts/install.sh --codex       # codex only
+./scripts/install.sh video-shots   # one skill only
+./scripts/install.sh --uninstall   # remove the symlinks
 ```
 
-依赖只有 `node` >= 18 和 `ffmpeg` / `ffprobe`（macOS：`brew install node ffmpeg`）。
-**零 npm 依赖、零 API key**，用当前会话额度。
+Requirements: `node` >= 18 and `ffmpeg` / `ffprobe` (macOS: `brew install node ffmpeg`).
+**No npm dependencies, no API keys** — it runs on your current session.
 
-不想软链就直接拷：`cp -r skills/video-shots ~/.claude/skills/`——skill 自包含，拷走就能用。
+Prefer a copy over a symlink? `cp -r skills/video-shots ~/.claude/skills/` —
+each skill is self-contained.
 
-## 示例
+## Example
 
-`demo-report/` 是拿 `demo-video.mp4`（202.9 秒的 AI 短片《啥是AI》）真跑出来的**完整产物**：
-53 镜、平均镜长 3.83 秒、每分钟 15.7 切、14 道质量门全绿。
+`demo-report/` is the **real output** of running the skill on `demo-video.mp4`
+(a 202.9-second AI-generated short film, *啥是AI*): 53 shots, 3.83 s average shot length,
+15.7 cuts per minute, all 14 gates green.
 
-[![拉片报告](skills/video-shots/assets/report.png)](demo-report/shots-report.html)
+[![Shot breakdown report](skills/video-shots/assets/report.png)](demo-report/shots-report.html)
 
-报告是**单文件交互页**：内嵌播放器（播放时同步高亮镜头、点镜头跳转）、镜头节奏带、
-可搜索可筛选可排序的镜头表（列表 / 卡片两种视图、首尾关键帧并排、点图开大图）、
-统计分布、出场人物、质量检查。零外部依赖，离线双击能开。
+The report is a **single interactive page**: an embedded player (playback highlights the current
+shot, click a shot to jump), a pace strip, a shot list you can search, filter and sort (list or
+card view, first and last keyframe side by side, click a frame to enlarge), distributions, cast,
+and the quality gates. No external dependencies — double-click it offline.
 
-<img src="skills/video-shots/assets/report-mobile.png" width="360" alt="窄屏下的镜头表">
+<img src="skills/video-shots/assets/report-mobile.png" width="360" alt="the shot list on a narrow screen">
 
 ```
 demo-report/
-├── shots-report.html   ← 克隆下来双击就能开
-├── shots.json          ← 53 镜的拉片主数据
-├── shots.md            ← Markdown 镜头表
-├── track.json          ← 逐帧差分的运动曲线（机器证据）
-└── frames/             ← 每镜首尾两张关键帧，共 106 张
+├── shots-report.html   ← clone and double-click
+├── shots.json          ← the breakdown data for all 53 shots
+├── shots.md            ← Markdown shot list
+├── track.json          ← frame-difference motion curve (the machine's evidence)
+└── frames/             ← first and last keyframe of every shot, 106 files
 ```
