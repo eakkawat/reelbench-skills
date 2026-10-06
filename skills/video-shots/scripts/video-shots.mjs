@@ -5,7 +5,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /* ------------------------------------------------------------------ */
@@ -708,6 +708,16 @@ const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+// 报告里的路径只有一个基准：报告所在目录——frames/ 和 poster 都是这么写的。
+// 播放器若原样写进绝对路径，file:// 下勉强能播，一过 http 服务（/home/… 变成站点根）
+// 或把报告拷到别的机器就是 404。已经是 URL 的不动。
+const relToReport = (p) => {
+  const s = String(p ?? '');
+  if (!s || /^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return s;
+  const rel = relative(process.cwd(), resolve(s));
+  return rel || s;
+};
+
 export function renderMd(doc, ctx = {}) {
   const lang = ctx.lang ?? doc.lang ?? 'en';
   const t = tOf(lang);
@@ -843,7 +853,7 @@ export function renderHtml(doc, ctx = {}) {
     words: t,
   };
 
-  const video = ctx.video ?? doc.source ?? '';
+  const video = relToReport(ctx.video ?? doc.source ?? '');
   const poster = frames[shots[0]?.id]?.includes('a') ? `${frameDir}/${shots[0].id}a.jpg` : '';
   const payload = JSON.stringify(doc).replace(/</g, '\\u003c');
   const cfgJson = JSON.stringify(cfg).replace(/</g, '\\u003c');

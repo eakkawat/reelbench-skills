@@ -85,7 +85,7 @@ node scripts/video-shots.mjs recut shots.json --track track.json \
 
 ```bash
 node scripts/selftest.mjs
-# ✅ 160 项断言全部通过（14 道门每道都有击穿用例）
+# ✅ 161 项断言全部通过（14 道门每道都有击穿用例）
 ```
 
 ## 用法

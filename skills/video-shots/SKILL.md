@@ -254,7 +254,7 @@ Final output:
 node {baseDir}/scripts/selftest.mjs
 ```
 
-160 assertions. No model, no cost, no ffmpeg. **Every one of the 14 gates has a case that breaks it** —
+161 assertions. No model, no cost, no ffmpeg. **Every one of the 14 gates has a case that breaks it** —
 proof that it really blocks. Run this first after any change to the scripts.
 
 ## Bundled sample

@@ -557,6 +557,7 @@ const cfgOf = (html) => JSON.parse(html.split('\n').find((l) => l.startsWith('co
 {
   // 播放器指哪条片子
   ok(renderHtml(baseDoc(), { ...CTX(), video: '../demo.mp4' }).includes('src="../demo.mp4"'), '--video sets the source video path');
+  ok(renderHtml(baseDoc(), { ...CTX(), video: join(process.cwd(), 'sub', 'demo.mp4') }).includes('src="sub/demo.mp4"'), '--video given as an absolute path is made relative to the report, the way frames/ are');
   ok(renderHtml(baseDoc(), CTX()).includes('src="t.mp4"'), 'Without it the source field from the JSON is used');
   const posterless = renderHtml(baseDoc(), CTX());
   ok(!posterless.includes('poster='), 'No extracted frames means no poster');

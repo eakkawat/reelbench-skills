@@ -100,7 +100,7 @@ Every gate has a **breaking test case** in the self-test, proving it really bloc
 
 ```bash
 node scripts/selftest.mjs
-# ✅ 160 assertions passed (every one of the 14 gates has a breaking case)
+# ✅ 161 assertions passed (every one of the 14 gates has a breaking case)
 ```
 
 ## Usage
