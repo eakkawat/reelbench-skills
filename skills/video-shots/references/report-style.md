@@ -101,6 +101,8 @@ in the JSON > **English by default**).
   for shot size / category / camera move / transition
 - **what does not switch: content.** Frame descriptions, dialogue, on-screen text, person names, notes —
   that is prose the model wrote, and it stays as it is
+- dialogue and on-screen text keep the language of the film, not the UI language. The rule, and when a
+  translation belongs in the same string, is in `schema.md` → Content language
 - every string goes through `CFG.words`; `report.js` contains no hardcoded Chinese. **Every key it
   references must exist in both the Chinese and the English table**, and the selftest checks each one
   (a missing key prints `undefined` on the page, so this gate is hard)

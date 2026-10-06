@@ -46,9 +46,21 @@ place, and a gate names it on the spot.
 | `transitionIn` | enum | How this shot **comes in**; optional (means `cut`) |
 | `subjects` | string[] | `cast` ids of the people in frame; an empty shot gets an empty array |
 | `frame` | string | **Frame description.** Minimum `minFrameChars` non-whitespace characters; write what is visible. The puffery list and the filler openers are checked |
-| `onscreenText` | string | On-screen text that is not dialogue: title, cards, UI text. May be empty |
-| `audio` | string | Dialogue, narration, key sound effects. **A burned-in dialogue subtitle counts as dialogue and goes here** |
+| `onscreenText` | string | On-screen text that is not dialogue: title, cards, UI text. May be empty. **Language: see Content language below** |
+| `audio` | string | Dialogue, narration, key sound effects. **A burned-in dialogue subtitle counts as dialogue and goes here. Language: see Content language below** |
 | `note` | string | Remark, optional. A shot shorter than `minShotSeconds` **must** have one (say whether it is a flash cut or a detection fragment) |
+
+## Content language
+
+Write `audio` and `onscreenText` in the language spoken or printed in the film. A Thai film gets Thai
+dialogue; a Chinese film gets Chinese dialogue. The reader matches these strings to the burned-in
+subtitle on screen, so the source text is the record.
+
+- **Thai and English need no gloss.** Write them as they stand.
+- Any other language: keep the source text, then add an English translation in parentheses, in one string:
+  `老李给我拿着好猛的药 (Old Li keeps me on very strong medicine)`
+- `frame`, `note`, `cast` names, the vocabulary labels and the report UI follow the report language
+  (`--lang`, English by default). `--lang` never rewrites content.
 
 ## params
 

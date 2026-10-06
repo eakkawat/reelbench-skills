@@ -244,7 +244,9 @@ Final output:
 - **The shot count you can handle depends on patience, not on the script.** A 90-minute film is possible,
   but that is dozens of contact sheets; for a feature, cut it into chapters and break each down separately
 - The report UI is bilingual (`--lang`, **English by default**). **The vocabulary labels follow the UI
-  language; the frame descriptions do not** — those are content, not labels
+  language; the frame descriptions do not** — those are content, not labels. `audio` and `onscreenText`
+  keep the language of the film; Thai and English need no translation, any other language takes an English
+  gloss in the same string (`{baseDir}/references/schema.md` → Content language)
 - Watching the report needs the source: point `--video` at it, or pick the file in the page. The report
   itself embeds no video data
 
