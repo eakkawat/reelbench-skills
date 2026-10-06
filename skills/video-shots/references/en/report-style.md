@@ -95,7 +95,7 @@ frame description + text and sound. Card view suits a fast look through the pict
 ## UI language
 
 `--lang zh|en` **switches UI labels only** (precedence: the `--lang` flag > the top-level `lang` field
-in the JSON > Chinese by default).
+in the JSON > **English by default**).
 
 - what switches: the statistics bar, section titles, buttons, player status, and the vocabulary labels
   for shot size / category / camera move / transition

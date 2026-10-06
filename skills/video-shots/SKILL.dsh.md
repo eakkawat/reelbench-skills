@@ -1,7 +1,7 @@
 ---
 name: video-shots
 description: |
-  Shot breakdown (拉片 / 拆镜头): turns one finished video into a shot-by-shot analysis table — duration,
+  Shot breakdown: turns one finished video into a shot-by-shot analysis table — duration,
   shot size, category, camera move, frame description. The division of labour is built in: code measures
   everything measurable (cut points from ffmpeg scene detection, durations from cut subtraction, motion as
   the median per-frame difference), the model judges only the four things it should judge (size /
@@ -14,10 +14,9 @@ description: |
   distributions, cast, quality-gate results). 14 deterministic quality gates. No npm dependencies, no API
   keys — only node and ffmpeg.
 whenToUse: |
-  Use when the user asks to 拉片, 拆镜头, 分析视频镜头, 镜头时长, 景别, 运镜, 镜头表, or for a shot
-  breakdown, a shot list from a video, shot count, average shot length, cuts-per-minute statistics, or an
-  editable, checkable analysis of how a film, ad, or short is cut. Needs node >= 18 and ffmpeg / ffprobe
-  on PATH.
+  Use when the user asks for a shot breakdown, a shot list from a video, shot count, average shot
+  length, cuts-per-minute statistics, shot size or camera-move analysis, or an editable, checkable
+  analysis of how a film, ad, or short is cut. Needs node >= 18 and ffmpeg / ffprobe on PATH.
 ---
 
 ## video-shots
@@ -71,8 +70,8 @@ Four facts about this environment:
 - **`read_image` downscales large images.** A big contact sheet arrives resampled and detail is lost. So
   read the whole sheet to scope the batch, then **go back to single frames for the shots you cannot call**
   (`--width 480` as a floor; re-extract wider when you need detail).
-- **The tool's own output is Chinese**: CLI usage, gate names, error text. Read it as it comes; the
-  report UI is the only part that switches language (`--lang en`).
+- **The tool speaks English everywhere**: CLI usage, gate names, error text, and the report. Nothing
+  needs translating. `--lang zh` is the only way to get Chinese output.
 
 **Out of scope:** no speech transcription (no ASR — lines are read off burned-in subtitles, left empty
 and explained when absent), no face recognition and no automatic cast merging (`cast` ids are assigned by
@@ -196,12 +195,12 @@ missed — go look at that shot.
 ```bash
 node ~/.dsh/skills/video-shots/scripts/video-shots.mjs render shots.json --md --track track.json > shots.md
 node ~/.dsh/skills/video-shots/scripts/video-shots.mjs render shots.json --html --track track.json \
-  --video <path to the source, relative to the report> --lang en > shots-report.html
+  --video <path to the source, relative to the report> > shots-report.html
 ```
 
 `--video` points the player at the source (it defaults to `source` in the JSON; the viewer can also pick
-a local file in the page). Set the UI language with `--lang zh|en` — **the default is Chinese, so an
-English session needs `--lang en`.** `render` looks for key frames in `frames/`, so **extract frames
+a local file in the page). **The report language defaults to English**; `--lang zh` switches it to
+Chinese. `render` looks for key frames in `frames/`, so **extract frames
 before you render**; a missing image is reported, never replaced with a placeholder.
 
 The report is a **single-file interactive page** (its style and behaviour come from `scripts/report.css`
@@ -247,8 +246,8 @@ pull/
   `transitionIn` is `dissolve`
 - **The shot count you can handle depends on patience, not on the script.** A 90-minute film is possible,
   but that is dozens of contact sheets; for a feature, cut it into chapters and break each down separately
-- The report UI is bilingual (`--lang`). **The vocabulary labels follow the UI language; the frame
-  descriptions do not** — those are content, not labels
+- The report UI is bilingual (`--lang`, **English by default**). **The vocabulary labels follow the UI
+  language; the frame descriptions do not** — those are content, not labels
 - Watching the report needs the source: point `--video` at it, or pick the file in the page. The report
   itself embeds no video data
 
@@ -268,4 +267,6 @@ proof that it really blocks. Run this first after any change to the scripts.
 static cameras 55%; the shortest shot 0.33 seconds (a flash cut in the snow run), the longest 16.06
 seconds (the long take under the shaft of light at the end). Beyond `seedCuts` it adds 10 cuts (half
 dissolves, half end cards), all recorded in `manualCuts`. All 14 gates pass, and one motion hint is kept
-as an example. It is the quality baseline and the selftest fixture.
+as an example. It is the quality baseline and the selftest fixture. **Its content is Chinese** — the
+film is Chinese and the file sets `"lang": "zh"`. It exists to test the tool, not to show what your
+English output should look like.

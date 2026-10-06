@@ -8,9 +8,9 @@ When a call is unclear, pick the **most conservative** value using the criteria 
 uncertainty into `note`. **Guessing a confident value is worse than writing a hedged one**: the first
 one becomes a fact downstream; the second one at least keeps the doubt visible.
 
-The enum keys below are what goes into `shots.json`. Under `--lang en` the report prints each value
-with the English label defined in `scripts/video-shots.mjs` (mostly the key with spaces: `close` →
-close-up, `none` → n/a, `pov` → POV). The 中文 column is the label the report prints by default.
+The enum keys below are what goes into `shots.json`. The report prints each value with the English
+label defined in `scripts/video-shots.mjs` (mostly the key with spaces: `close` → close-up, `none` →
+n/a, `pov` → POV). `--lang zh` prints Chinese labels instead. **Fill the key, never the label.**
 
 ---
 
@@ -19,16 +19,16 @@ close-up, `none` → n/a, `pov` → POV). The 中文 column is the label the rep
 Judge by **how much of the frame a person fills**, not by focal length. When no person is in frame,
 convert from an object at the same distance.
 
-| value | 中文 | criteria |
-| --- | --- | --- |
-| `none` | 无景别 | Black frame, title card only, graphics only — no photographed space in the frame. **Use it for every card and every black frame.** Do not force a shot size onto it |
-| `extreme-wide` | 大远景 | A person is under 1/4 of frame height, or cannot be found at all: mountains, cityscapes, wide aerials |
-| `wide` | 全景 | A person fills 1/3 of frame height up to the full body with the environment, feet inside frame |
-| `medium-wide` | 中远景 | Knees up to full body, the environment still takes most of the frame |
-| `medium` | 中景 | Waist up, the environment is still readable |
-| `medium-close` | 中近景 | Chest up, the background starts to fall out of focus — **the default size of a dialogue scene** |
-| `close` | 特写 | Shoulders up, the face takes most of the frame; an object close-up sits at the same level |
-| `extreme-close` | 大特写 | Part of a face, a finger, the detail of an object — one thing left in the frame |
+| value | criteria |
+| --- | --- |
+| `none` | Black frame, title card only, graphics only — no photographed space in the frame. **Use it for every card and every black frame.** Do not force a shot size onto it |
+| `extreme-wide` | A person is under 1/4 of frame height, or cannot be found at all: mountains, cityscapes, wide aerials |
+| `wide` | A person fills 1/3 of frame height up to the full body with the environment, feet inside frame |
+| `medium-wide` | Knees up to full body, the environment still takes most of the frame |
+| `medium` | Waist up, the environment is still readable |
+| `medium-close` | Chest up, the background starts to fall out of focus — **the default size of a dialogue scene** |
+| `close` | Shoulders up, the face takes most of the frame; an object close-up sits at the same level |
+| `extreme-close` | Part of a face, a finger, the detail of an object — one thing left in the frame |
 
 **Two common misjudgments:**
 
@@ -42,19 +42,19 @@ convert from an object at the same distance.
 Shot size answers "how close". Category answers "why does this shot exist". **One shot gets one
 category.** When it does two jobs at once, pick the one **the editor would mourn first if it were cut**.
 
-| value | 中文 | the job it does | evidence it must produce (checked by a gate) |
-| --- | --- | --- | --- |
-| `establishing` | 定场 | States where this is, who is there, what time. Usually the first shot after a location change | — |
-| `subject` | 主体 | Ordinary narrative coverage that follows a person or a thing | — |
-| `dialogue` | 对话 | Someone is speaking; either side of a shot/reverse-shot | `audio` non-empty |
-| `reaction` | 反应 | No speech — only listening, watching, freezing. **The cheapest drama in a short drama** | `subjects` non-empty |
-| `insert` | 插入特写 | One action or detail lifted out as an accent: a hand pressing a lid down, a knife landing on bone | — |
-| `pov` | 主观 | The frame is what a specific person's eyes see | — |
-| `empty` | 空镜 | No person in frame — environment, weather, objects only | `subjects` must be empty |
-| `product` | 产品展示 | A product or an interface presented as the protagonist (the workhorse of ads and selling videos) | — |
-| `text-card` | 字卡 | The frame is text: a title, a caption card, end credits | `onscreenText` non-empty |
-| `transition` | 转场镜头 | The shot itself is a transition: black, white flash, scenery placed there to join two scenes | — |
-| `archive` | 引用素材 | Screen recordings, news footage, someone else's clip, older flashback material | — |
+| value | the job it does | evidence it must produce (checked by a gate) |
+| --- | --- | --- |
+| `establishing` | States where this is, who is there, what time. Usually the first shot after a location change | — |
+| `subject` | Ordinary narrative coverage that follows a person or a thing | — |
+| `dialogue` | Someone is speaking; either side of a shot/reverse-shot | `audio` non-empty |
+| `reaction` | No speech — only listening, watching, freezing. **The cheapest drama in a short drama** | `subjects` non-empty |
+| `insert` | One action or detail lifted out as an accent: a hand pressing a lid down, a knife landing on bone | — |
+| `pov` | The frame is what a specific person's eyes see | — |
+| `empty` | No person in frame — environment, weather, objects only | `subjects` must be empty |
+| `product` | A product or an interface presented as the protagonist (the workhorse of ads and selling videos) | — |
+| `text-card` | The frame is text: a title, a caption card, end credits | `onscreenText` non-empty |
+| `transition` | The shot itself is a transition: black, white flash, scenery placed there to join two scenes | — |
+| `archive` | Screen recordings, news footage, someone else's clip, older flashback material | — |
 
 **Category and shot size are not the same axis. Do not couple them.** A close-up is not automatically
 `insert` (a talking close-up is `dialogue`), and a wide shot is not automatically `establishing`
@@ -65,25 +65,25 @@ category.** When it does two jobs at once, pick the one **the editor would mourn
 **Ask one question first: did the whole frame move?** If the frame did not move and only a person
 moved inside it, that is `static`. This is the most frequently miswritten field.
 
-| value | 中文 | measured tier | criteria |
-| --- | --- | --- | --- |
-| `static` | 固定 | still | The camera does not move. A person running across the frame is still `static` |
-| `push-in` | 推 | strong | The whole camera moves toward the subject; background perspective changes with it |
-| `pull-out` | 拉 | strong | The whole camera moves back |
-| `zoom-in` / `zoom-out` | 变焦推 / 变焦拉 | strong | Focal length changes, **perspective does not** — the difference from a push/pull is whether the background "comes forward" |
-| `pan-left` / `pan-right` | 左摇 / 右摇 | strong | The camera position holds; the camera rotates horizontally |
-| `tilt-up` / `tilt-down` | 上摇 / 下摇 | strong | The camera position holds; the camera rotates vertically |
-| `truck-left` / `truck-right` | 左移 / 右移 | strong | The camera translates horizontally |
-| `pedestal-up` / `pedestal-down` | 升 / 降 | strong | The camera translates vertically |
-| `tracking` | 跟拍 | strong | Follows a moving subject; the subject keeps roughly the same position in frame |
-| `arc` | 环绕 | strong | Circles around the subject |
-| `whip-pan` | 甩镜 | strong | A pan fast enough to pull motion blur; often doubles as a transition |
-| `handheld` | 手持微晃 | subtle | Composition holds, the frame breathes in small continuous motion — **the main source of a documentary feel** |
-| `shake` | 剧烈晃动 | strong | Large-amplitude shaking: an explosion, a run, a camera that pretends to be shoved |
-| `rack-focus` | 变焦点 | subtle | Camera and composition hold; focus moves between foreground and background |
-| `micro-push` | 微推 | subtle | An extremely slow push, a small travel over several seconds — common in emotional shots |
-| `roll` | 旋转 | strong | The frame rotates around the lens axis |
-| `drone` | 航拍移动 | strong | Overall displacement of an aerial camera position |
+| value | measured tier | criteria |
+| --- | --- | --- |
+| `static` | still | The camera does not move. A person running across the frame is still `static` |
+| `push-in` | strong | The whole camera moves toward the subject; background perspective changes with it |
+| `pull-out` | strong | The whole camera moves back |
+| `zoom-in` / `zoom-out` | strong | Focal length changes, **perspective does not** — the difference from a push/pull is whether the background "comes forward" |
+| `pan-left` / `pan-right` | strong | The camera position holds; the camera rotates horizontally |
+| `tilt-up` / `tilt-down` | strong | The camera position holds; the camera rotates vertically |
+| `truck-left` / `truck-right` | strong | The camera translates horizontally |
+| `pedestal-up` / `pedestal-down` | strong | The camera translates vertically |
+| `tracking` | strong | Follows a moving subject; the subject keeps roughly the same position in frame |
+| `arc` | strong | Circles around the subject |
+| `whip-pan` | strong | A pan fast enough to pull motion blur; often doubles as a transition |
+| `handheld` | subtle | Composition holds, the frame breathes in small continuous motion — **the main source of a documentary feel** |
+| `shake` | strong | Large-amplitude shaking: an explosion, a run, a camera that pretends to be shoved |
+| `rack-focus` | subtle | Camera and composition hold; focus moves between foreground and background |
+| `micro-push` | subtle | An extremely slow push, a small travel over several seconds — common in emotional shots |
+| `roll` | strong | The frame rotates around the lens axis |
+| `drone` | strong | Overall displacement of an aerial camera position |
 
 **The measured tier (`motion`) is the trace this camera move must leave in the pixels.** The camera
 gate checks exactly that:
@@ -103,16 +103,16 @@ important enough, that is a sign the shot needs a cut (`recut --split`).
 
 Optional. Omitting it means `cut`.
 
-| value | 中文 | criteria |
-| --- | --- | --- |
-| `cut` | 硬切 | The picture changes inside one frame. Most shots are this |
-| `dissolve` | 叠化 | Two pictures overlap for a few frames to tens of frames. **The detector misses cuts here most often**; the cut point is the midpoint of the dissolve |
-| `fade-in` | 淡入 | The picture fades up from black (or white) |
-| `fade-out` | 淡出 | The picture fades down to black (or white). When a black frame is a shot of its own, its entry point is `fade-out` |
-| `whip` | 甩切 | Joined by the blur of one whip pan |
-| `match-cut` | 匹配剪辑 | The cut happens only after the shape or the action of the two shots lines up |
-| `wipe` | 划像 | An edge pushes across the frame |
-| `morph` | 特效转场 | Morph, particles, template motion |
+| value | criteria |
+| --- | --- |
+| `cut` | The picture changes inside one frame. Most shots are this |
+| `dissolve` | Two pictures overlap for a few frames to tens of frames. **The detector misses cuts here most often**; the cut point is the midpoint of the dissolve |
+| `fade-in` | The picture fades up from black (or white) |
+| `fade-out` | The picture fades down to black (or white). When a black frame is a shot of its own, its entry point is `fade-out` |
+| `whip` | Joined by the blur of one whip pan |
+| `match-cut` | The cut happens only after the shape or the action of the two shots lines up |
+| `wipe` | An edge pushes across the frame |
+| `morph` | Morph, particles, template motion |
 
 ---
 
@@ -127,9 +127,8 @@ is tuned for Chinese, where 12 characters is a real phrase. **In English 12 char
 words, so the gate does not bite.** Treat the English floor as 8 words or more, and raise
 `params.minFrameChars` (for example 60) if you want the machine to enforce it.
 
-The puffery blacklist and the filler-opener check are **Chinese-only** (`VAGUE_WORDS` and
-`FILLER_OPENERS` in `scripts/video-shots.mjs`: 氛围感, 高级感, 视觉冲击, 令人, 唯美, 美不胜收,
-大气磅礴, 震撼人心, 画面感十足, 很美, 非常美, 精美绝伦, 赏心悦目, 引人入胜). English puffery —
+The puffery blacklist and the filler-opener check in `scripts/video-shots.mjs` (`VAGUE_WORDS` and
+`FILLER_OPENERS`) list Chinese words only, so they never fire on English text. English puffery —
 "cinematic", "moody", "stunning", "beautiful shot" — passes the gate. Nothing will stop it, so the
 rule is yours to hold.
 

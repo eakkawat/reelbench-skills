@@ -6,8 +6,8 @@ and a finished film contains only shots.
 ```json
 {
   "source": "demo-video.mp4",
-  "title": "啥是AI",
-  "lang": "zh",
+  "title": "What Is AI",
+  "lang": "en",
   "meta": { "durationSeconds": 202.9, "fps": 30, "width": 1680, "height": 720, "aspect": "7:3", "codec": "h264", "hasAudio": true },
   "params": { "sceneThreshold": 0.15, "minShotSeconds": 0.3 },
   "seedCuts": [0.9, 1.23, 2.97, "…every detected cut point"],
