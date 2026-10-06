@@ -237,7 +237,7 @@ if ($('cast-grid')) {
     const shot = CFG.portraits[c.id];
     const n = SHOTS.filter((s) => (s.subjects ?? []).includes(c.id)).length;
     return `<article class="cast-card">${shot ? fimg(shot, 'a') : `<div class="frame-missing" style="aspect-ratio:7/3">${W.missing}</div>`}`
-      + `<div><h3>${esc(c.name)} <span class="mono muted" style="font-size:10px;margin-left:7px">${esc(c.id)}</span></h3>`
+      + `<div><h3>${esc(c.name)} <span class="mono muted" style="font-size:0.625rem;margin-left:7px">${esc(c.id)}</span></h3>`
       + `<p>${esc(c.note ?? '')}</p>`
       + `<button data-cast="${esc(c.id)}">${esc(W.castShots.replace('{n}', n))} ${icon('right')}</button></div></article>`;
   }).join('');
